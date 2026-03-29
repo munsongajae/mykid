@@ -354,7 +354,10 @@ export default function Home() {
                if (allDaySnacks.length === 0) return null;
                
                // Deduplicate by title to avoid redundant rows for siblings
-               const uniqueSnacks = allDaySnacks.filter((v: any, i: number, a: any[]) => a.findIndex((t: any) => t.title === v.title) === i);
+               const uniqueSnacks = allDaySnacks.filter((val: any, idx: number, arr: any[]) => {
+                 return arr.findIndex((item: any) => item.title === val.title) === idx;
+               });
+
 
 
                return (
@@ -514,8 +517,12 @@ function MealListView({ meals, schedules, kidsInfo, selectedDate }: any) {
 
                   {/* Afterschool Snack Section - CONSOLIDATED UNIFIED VIEW */}
                   { (() => {
-                     const uniqueSnacks = (snackList || []).filter((v: any, i: number, a: any[]) => a.findIndex((t: any) => t.title === v.title) === i);
+                     const snackArr = snackList || [];
+                     const uniqueSnacks = snackArr.filter((val: any, idx: number, arr: any[]) => {
+                        return arr.findIndex((item: any) => item.title === val.title) === idx;
+                     });
                      if (uniqueSnacks.length === 0) return null;
+
 
 
                      return (
