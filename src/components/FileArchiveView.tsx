@@ -78,12 +78,13 @@ export default function FileArchiveView({ archives, onUploaded, onDeleted }: Fil
     }
   };
 
-  const CHILD_LABEL = { jeum: '지음', eum: '이음', both: '공통' };
+  const CHILD_LABEL = { jeum: '열음', eum: '지음', both: '공통' };
   const CHILD_COLOR = {
-    jeum: { bg: 'rgba(96,165,250,0.15)', color: 'var(--jeum-500)' },
-    eum: { bg: 'rgba(52,211,153,0.15)', color: 'var(--eum-500)' },
-    both: { bg: 'rgba(167,139,250,0.15)', color: '#a78bfa' },
+    jeum: { bg: 'rgba(59,130,246,0.15)', color: '#3b82f6' },
+    eum: { bg: 'rgba(16,185,129,0.15)', color: '#10b981' },
+    both: { bg: 'rgba(139,92,246,0.15)', color: '#8b5cf6' },
   };
+
 
   return (
     <div className="space-y-4">

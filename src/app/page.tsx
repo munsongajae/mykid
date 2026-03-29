@@ -40,14 +40,13 @@ export default function Home() {
   const [editingSchedule, setEditingSchedule] = useState<Schedule | undefined>(undefined);
   const [activeChild, setActiveChild] = useState<ActiveChild>('jeum');
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
+  const [completedItems, setCompletedItems] = useState<Record<string, boolean>>({});
 
 
   const [kidsInfo, setKidsInfo] = useState({
     jeum: { name: '열음', grade: '2', class: '3' },
     eum: { name: '지음', grade: '1', class: '1' }
   });
-
-  const [completedItems, setCompletedItems] = useState<Record<string, boolean>>({});
 
 
   useEffect(() => {
@@ -134,12 +133,13 @@ export default function Home() {
     ...daySchedulesEum.flatMap(s => (s.preparations || []).map(p => ({ id: `eum-${s.id}-${p}`, item: p, child: kidsInfo.eum.name, sched: s.title, childId: 'eum' as const }))),
   ];
 
-
-
   const completedCount = allPrep.filter(p => completedItems[p.id]).length;
   const progressPercent = allPrep.length > 0 ? (completedCount / allPrep.length) * 100 : 0;
   
   const handleTogglePrep = (id: string) => { setCompletedItems(prev => ({ ...prev, [id]: !prev[id] })); };
+
+
+
   const handleScheduleAdded = (s: Schedule | Schedule[]) => {
     setSchedules(prev => {
       const itemsToAdd = Array.isArray(s) ? s : [s];
@@ -163,28 +163,55 @@ export default function Home() {
 
 
   return (
-    <div className="min-h-screen pb-44 bg-white relative">
-      <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-2xl border-b border-gray-50 px-6 py-4">
+    <div className="min-h-screen pb-44 bg-[var(--bg-primary)] text-[var(--text-900)] relative">
+      <header className="sticky top-0 z-40 bg-[var(--header-bg)] backdrop-blur-2xl border-b border-[var(--border)] px-6 py-4">
 
 
 
-        <div className="flex items-center justify-between max-w-3xl mx-auto">
-          <h1 className="type-title flex items-center gap-2">
-            {format(selectedDate, 'M월 d일', { locale: ko })} 
-            <span className="text-gray-400 font-medium">{format(selectedDate, 'EEEE', { locale: ko })}</span>
-          </h1>
-          <div className="flex items-center gap-2">
-            <button 
-              onClick={() => { setActiveChild('jeum'); setShowModal(true); }}
-              className="w-8 h-8 rounded-lg flex items-center justify-center bg-blue-600 text-white shadow-md shadow-blue-100' hover:bg-blue-700 transition-all font-black text-lg"
-            >
-              <Plus size={16} strokeWidth={3} />
-            </button>
-            <button onClick={() => { loadMealData(selectedDate); loadScheduleData(selectedDate); loadTimetableData(selectedDate); loadSchedules(selectedDate); }} className="w-8 h-8 rounded-lg flex items-center justify-center bg-gray-50 border border-gray-100 hover:bg-gray-100"><RefreshCw size={14} /></button>
-            <button onClick={() => setActiveTab('settings')} className="w-8 h-8 rounded-lg flex items-center justify-center bg-gray-50 border border-gray-100 hover:bg-gray-100"><Settings size={14} className={activeTab === 'settings' ? 'text-blue-500' : 'text-gray-400'} /></button>
+
+        <div className="flex flex-col items-center max-w-2xl mx-auto">
+          <div className="w-full flex items-center justify-between mb-2">
+            <h1 className="type-title truncate mr-2">
+              {format(selectedDate, 'M월 d일', { locale: ko })} 
+              <span className="text-gray-400 font-medium ml-1.5">{format(selectedDate, 'EEEE', { locale: ko })}</span>
+            </h1>
+            <div className="flex items-center gap-1.5 shrink-0">
+               <button onClick={() => { setActiveChild('jeum'); setShowModal(true); }} className="w-8 h-8 rounded-lg flex items-center justify-center bg-blue-600 text-white shadow-lg shadow-blue-100 hover:bg-blue-700 active:scale-95 transition-all"><Plus size={16} strokeWidth={3} /></button>
+               <button onClick={() => { setActiveTab('settings'); }} className="w-8 h-8 rounded-lg flex items-center justify-center bg-[var(--bg-card-hover)] border border-[var(--border)] text-[var(--text-500)] hover:bg-[var(--bg-card)] hover:text-blue-500 transition-all"><Settings size={14} /></button>
+            </div>
+
+          </div>
+          
+          <div className="w-full flex items-center gap-1.5">
+             <button 
+               onClick={() => setSelectedDate(prev => addDays(prev, -1))}
+               className="p-1 px-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border)] text-[10px] font-black text-[var(--text-700)] hover:bg-[var(--bg-card-hover)] active:scale-95 transition-all"
+             >
+               어제
+             </button>
+             <button 
+               onClick={() => setSelectedDate(new Date())}
+               className="p-1 px-4 rounded-xl bg-blue-600/10 border border-blue-500/30 text-[10px] font-black text-blue-500 hover:bg-blue-600/20 active:scale-95 transition-all"
+             >
+               오늘
+             </button>
+             <button 
+               onClick={() => setSelectedDate(prev => addDays(prev, 1))}
+               className="p-1 px-3 rounded-xl bg-orange-600/10 border border-orange-500/30 text-[10px] font-black text-orange-500 hover:bg-orange-600/20 active:scale-95 transition-all"
+             >
+               내일
+             </button>
+             <div className="flex-1" />
+             <button 
+               onClick={() => { loadMealData(selectedDate); loadScheduleData(selectedDate); loadTimetableData(selectedDate); loadSchedules(selectedDate); }} 
+               className="p-1 px-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border)] text-[10px] font-black text-[var(--text-500)] hover:bg-[var(--bg-card-hover)] active:bg-gray-100 flex items-center gap-1 transition-all"
+             >
+               <RefreshCw size={10} /> 전체 리프레시
+             </button>
           </div>
 
         </div>
+
       </header>
 
       <div className="max-w-2xl mx-auto px-4 py-4 space-y-4">
@@ -216,13 +243,14 @@ export default function Home() {
             <section className="grid grid-cols-2 gap-3">
               {[ {k:'jeum', c: 'blue', e: '🦋'}, {k:'eum', c: 'emerald', e: '🌿'} ].map(({k, c, e}) => (
                 <div key={k} className={`glass-card !p-4 border-l-[3px] border-${c}-500 transition-colors`}>
-                  <div className="flex items-center justify-between mb-3 pb-2 border-b border-gray-50">
+                  <div className={`flex items-center justify-between mb-3 pb-2 border-b border-[var(--border)]`}>
                     <div className="flex items-center gap-2">
-                       <span>{e}</span><h3 className="type-section">{(kidsInfo as any)[k].name}</h3>
-                       <button onClick={() => { setActiveChild(k as ActiveChild); setShowModal(true); }} className="p-1 rounded bg-gray-50 text-gray-400 hover:text-blue-500 hover:bg-gray-100"><Plus size={10} /></button>
+                       <span>{e}</span><h3 className="type-section text-[var(--text-900)]">{(kidsInfo as any)[k].name}</h3>
+                       <button onClick={() => { setActiveChild(k as ActiveChild); setShowModal(true); }} className="p-1 rounded bg-[var(--bg-card-hover)] text-[var(--text-500)] hover:text-blue-500 hover:bg-[var(--bg-card)] transition-all"><Plus size={10} /></button>
                     </div>
-                    <span className={`type-caption text-${c}-600 bg-${c}-50 px-1.5 py-0.5 rounded-md`}>{(kidsInfo as any)[k].grade}-{(kidsInfo as any)[k].class}</span>
+                    <span className={`type-caption text-${c}-500 bg-${c}-600/10 px-1.5 py-0.5 rounded-md border border-${c}-500/20`}>{(kidsInfo as any)[k].grade}-{(kidsInfo as any)[k].class}</span>
                   </div>
+
 
                   {/* School Timetable Summary */}
                   {(k === 'jeum' ? timetableJeum : timetableEum).length > 0 && (
@@ -251,35 +279,35 @@ export default function Home() {
                   </div>
 
 
-                  <div className="pt-2 mt-2 border-t border-gray-50 flex justify-end"><button onClick={() => setActiveTab('schedule')} className="type-caption text-gray-400 hover:text-blue-500">More <ExternalLink size={10}/></button></div>
                 </div>
               ))}
             </section>
+
             {allPrep.length > 0 && (
-              <section className="space-y-2">
+              <section className="space-y-3 animate-fade-in">
                 <div className="flex items-center justify-between px-1">
-                   <h2 className="type-section flex items-center gap-1.5"><Backpack size={14} className="text-orange-500" /> Prep Checklist</h2>
-                   <span className="type-time">{completedCount} / {allPrep.length}</span>
+                   <h2 className="type-section flex items-center gap-1.5 text-[var(--text-900)]"><Backpack size={14} className="text-orange-500" /> 오늘의 준비물 체크</h2>
+                   <span className="text-[10px] font-black text-orange-500">{completedCount} / {allPrep.length}</span>
                 </div>
                 
                 <div className="grid grid-cols-2 gap-3">
                    {[ {id:'jeum', c:'blue'}, {id:'eum', c:'emerald'} ].map(({id, c}) => (
-                      <div key={id} className={`glass-card !p-3 border-t-[3px] border-${c}-500/30`}>
-                         <p className={`type-caption font-black text-${c}-600 mb-2`}>{(kidsInfo as any)[id].name}이 것</p>
+                      <div key={id} className={`glass-card !p-3 border-t-[3px] border-${c}-500/50 bg-[var(--bg-card)]`}>
+                         <p className={`type-caption font-black text-${c}-500 mb-2 px-1`}>{(kidsInfo as any)[id].name}이 것</p>
                          <div className="space-y-1">
                             {allPrep.filter(p => p.childId === id).map((p) => (
-                               <div key={p.id} className="flex items-center gap-2 py-1.5 cursor-pointer group" onClick={() => handleTogglePrep(p.id)}>
-                                  <input type="checkbox" checked={completedItems[p.id] || false} onChange={() => {}} className={`custom-checkbox !w-3.5 !h-3.5 ${id === 'eum' ? '!border-emerald-200 checked:!bg-emerald-500 checked:!border-emerald-500' : ''}`} />
+                               <div key={p.id} className="flex items-center gap-2 py-2 px-2 rounded-lg hover:bg-[var(--bg-card-hover)] cursor-pointer group transition-colors" onClick={() => handleTogglePrep(p.id)}>
+                                  <input type="checkbox" checked={completedItems[p.id] || false} onChange={() => {}} className={`custom-checkbox !w-4 !h-4 ${id === 'eum' ? '!border-emerald-200 checked:!bg-emerald-500 checked:!border-emerald-500' : ''}`} />
                                   <div className="flex-1 min-w-0">
-                                     <p className={`type-body font-bold truncate ${completedItems[p.id] ? 'text-gray-300 line-through' : ''}`}>{p.item}</p>
-                                     <p className="type-caption opacity-40 truncate">{p.sched}</p>
+                                     <p className={`text-[11px] font-bold truncate ${completedItems[p.id] ? 'text-[var(--text-400)] line-through' : 'text-[var(--text-900)]'}`}>{p.item}</p>
+                                     <p className="text-[8px] font-medium text-[var(--text-500)] truncate opacity-60">{p.sched}</p>
                                   </div>
                                </div>
                             ))}
                             {allPrep.filter(p => p.childId === id).length === 0 && (
-                               <div className="py-4 text-center opacity-30">
+                               <div className="py-4 text-center opacity-20">
                                   <Backpack size={12} className="mx-auto mb-1" />
-                                  <p className="text-[8px] font-bold">No Prep</p>
+                                  <p className="text-[8px] font-bold text-[var(--text-400)]">No Prep</p>
                                </div>
                             )}
                          </div>
@@ -289,63 +317,72 @@ export default function Home() {
               </section>
             )}
 
-            {/* Today's Meal Dynamic Summary */}
-            <section onClick={() => setActiveTab('meal')} className="glass-card !p-5 cursor-pointer active:scale-[0.98] transition-all border-none shadow-sm bg-orange-50/20 group">
+
+
+            {/* Meal Widget - High Density Layout */}
+            <section className="glass-card !p-5 border-none shadow-sm bg-orange-600/5 group animate-fade-in border border-orange-500/10">
               <div className="flex items-center justify-between mb-4">
-                 <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-orange-100 flex items-center justify-center group-hover:bg-orange-200 transition-colors">
-                       <Utensils size={18} className="text-orange-600" />
-                    </div>
-                    <div>
-                       <h2 className="type-section">오늘의 급식</h2>
-                       {mealData.find(m => m.date === format(selectedDate, 'yyyyMMdd')) && (
-                          <p className="text-[10px] font-black text-orange-500">{mealData.find(m => m.date === format(selectedDate, 'yyyyMMdd'))?.calInfo}</p>
-                       )}
-                    </div>
-                 </div>
-                 <ChevronRight size={16} className="text-orange-300" />
+                <div className="flex items-center gap-3">
+                   <div className="w-10 h-10 rounded-xl bg-orange-600/10 flex items-center justify-center">
+                      <Utensils size={18} className="text-orange-500" />
+                   </div>
+                   <div>
+                      <h2 className="type-section text-[var(--text-900)]">오늘의 급식</h2>
+                      <p className="type-caption text-orange-500/70">건강하고 맛있는 점심 시간!</p>
+                   </div>
+                </div>
+                <div onClick={() => setActiveTab('meal')} className="flex items-center gap-1.5 p-2 rounded-lg bg-[var(--bg-card)] border border-[var(--border)] text-[var(--text-700)] hover:bg-white/10 cursor-pointer active:scale-95 transition-all">
+                  <span className="text-[10px] font-black">식단 전체보기</span>
+                  <ChevronRight size={16} className="text-orange-300" />
+                </div>
               </div>
               
               <div className="flex flex-wrap gap-1.5">
-                 {mealData.find(m => m.date === format(selectedDate, 'yyyyMMdd'))?.dishes.map((dish, idx) => (
-                    <span key={idx} className="px-2 py-1 bg-white border border-orange-100 text-[10px] font-bold text-gray-700 rounded-lg shadow-sm">
-                       {dish}
-                    </span>
-                 )) || (
-                    <p className="type-caption text-gray-400 italic py-2">오늘의 급식 정보가 없습니다.</p>
-                 )}
+                {mealData.find(m => m.date === format(selectedDate, 'yyyyMMdd'))?.dishes.map((dish, idx) => (
+                   <span key={idx} className="px-2 py-1 bg-[var(--bg-card)] border border-[var(--border)] text-[10px] font-bold text-[var(--text-700)] rounded-lg shadow-sm">
+                      {dish}
+                   </span>
+                )) || (
+                   <p className="type-caption text-[var(--text-400)] italic py-2">오늘의 급식 정보가 없습니다.</p>
+                )}
               </div>
             </section>
 
-            {/* Afterschool Snack Details */}
-            { [...daySchedulesJeum, ...daySchedulesEum].filter(s => s.title.includes('간식')).length > 0 && (
-               <section className="glass-card !p-5 border-none shadow-sm bg-blue-50/20 group animate-fade-in">
-                 <div className="flex items-center gap-3 mb-4">
-                    <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center">
-                       <Coffee size={18} className="text-blue-600" />
-                    </div>
-                    <div>
-                       <h2 className="type-section">돌봄 간식</h2>
-                       <p className="type-caption text-blue-500">오늘의 맛있는 간식 타임!</p>
-                    </div>
-                 </div>
-                 <div className="grid grid-cols-1 gap-2">
-                    {[daySchedulesJeum, daySchedulesEum].map((list, idx) => {
-                       const snack = list.find(s => s.title.includes('간식'));
-                       if (!snack) return null;
-                       return (
-                          <div key={idx} className="flex items-center justify-between p-3 bg-white rounded-xl border border-blue-50 shadow-sm">
-                             <span className={`type-caption font-black ${idx === 0 ? 'text-blue-600' : 'text-emerald-600'}`}>
-                                {idx === 0 ? kidsInfo.jeum.name : kidsInfo.eum.name}
+            {/* Afterschool Snack Details - Unified Consolidated View */}
+            { (() => {
+               const allDaySnacks = [...daySchedulesJeum, ...daySchedulesEum].filter(s => s.title.includes('간식'));
+               if (allDaySnacks.length === 0) return null;
+               
+               // Deduplicate by title to avoid redundant rows for siblings
+               const uniqueSnacks = allDaySnacks.filter((v, i, a) => a.findIndex(t => t.title === v.title) === i);
+
+               return (
+                 <section className="glass-card !p-5 border-none shadow-sm bg-blue-600/5 group animate-fade-in border border-blue-500/10">
+                   <div className="flex items-center gap-3 mb-4">
+                      <div className="w-10 h-10 rounded-xl bg-blue-600/10 flex items-center justify-center">
+                         <Coffee size={18} className="text-blue-500" />
+                      </div>
+                      <div>
+                         <h2 className="type-section text-[var(--text-900)]">오늘의 간식</h2>
+                         <p className="type-caption text-blue-500/70">맛있는 간식 타임입니다!</p>
+                      </div>
+                   </div>
+                   <div className="grid grid-cols-1 gap-2">
+                      {uniqueSnacks.map((snack, idx) => (
+                          <div key={idx} className="flex items-center justify-between p-3 bg-[var(--bg-card)] rounded-xl border border-[var(--border)] shadow-sm">
+                             <span className="text-[12px] font-black text-[var(--text-900)] flex items-center gap-2">
+                                <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                                {snack.title.replace('간식: ', '')}
                              </span>
-                             <span className="type-body font-black text-gray-900">{snack.title}</span>
-                             <span className="type-time">{snack.start_time}</span>
+                             <span className="type-time text-[var(--text-500)]">{snack.start_time}</span>
                           </div>
-                       );
-                    })}
-                 </div>
-               </section>
-            )}
+                      ))}
+                   </div>
+                 </section>
+               );
+            })()}
+
+
 
 
           </>
@@ -375,18 +412,7 @@ export default function Home() {
         )}
 
 
-        {activeTab === 'prep' && (
-          <section className="space-y-4 animate-fade-in">
-             <div className="px-1"><h2 className="type-title">준비물 마스터</h2><p className="type-caption mt-1">오늘 챙겨야 할 모든 물건입니다 ({completedCount}/{allPrep.length})</p></div>
-             <div className="glass-card !p-6"><div className="progress-mini mb-4 h-2"><div className="progress-mini-fill" style={{ width: `${progressPercent}%` }} /></div>
-             <div className="divide-y divide-gray-50">{allPrep.map(p => (
-                <div key={p.id} className="flex items-center gap-3 py-3" onClick={() => handleTogglePrep(p.id)}>
-                   <input type="checkbox" checked={completedItems[p.id]} onChange={()=>{}} className="custom-checkbox !w-5 !h-5" />
-                   <div className="flex-1 text-sm font-bold">{p.item} <span className="text-[10px] text-gray-400 font-normal ml-2">{p.child} · {p.sched}</span></div>
-                </div>
-             ))}</div></div>
-          </section>
-        )}
+
 
         {activeTab === 'meal' && (
            <MealListView 
@@ -476,37 +502,40 @@ function MealListView({ meals, schedules, kidsInfo, selectedDate }: any) {
                           <span className="text-[9px] font-bold text-gray-400">{meal.calInfo}</span>
                        </div>
                        <div className="flex flex-wrap gap-1.5">
-                          {(meal.dishes || []).map((dish: any, midx: any) => (
-                             <span key={midx} className="px-2 py-1 bg-orange-50 text-[10px] font-bold text-orange-800 rounded-lg">
-                                {dish}
-                             </span>
-                          ))}
-                       </div>
-                    </div>
-                  )}
-
-                  {/* Afterschool Snack Section - Only show if data exists */}
-                  {snackList.length > 0 && (
-                     <div className="pt-3 border-t border-gray-50 bg-blue-50/20 -mx-4 -mb-4 p-4 space-y-2 animate-fade-in">
-                        <p className="type-caption flex items-center gap-1.5 text-blue-600 font-bold"><Coffee size={10} /> 돌봄 간식</p>
-                        <div className="grid grid-cols-1 gap-1.5">
-                           {snackList.map((snack: any, sidx: any) => (
-                              <div key={sidx} className="flex items-center justify-between bg-white/70 p-2 rounded-lg border border-blue-50">
-                                 <span className={`text-[9px] font-black ${snack.child === 'jeum' ? 'text-blue-500' : 'text-emerald-500'}`}>
-                                    {kidsInfo?.[snack.child as keyof typeof kidsInfo]?.name || snack.child}
-                                 </span>
-                                 <span className="type-body font-black text-gray-900">{snack.title?.replace('간식: ', '')}</span>
-                                 <span className="type-time">{snack.start_time}</span>
-                              </div>
+                           {(meal.dishes || []).map((dish: any, midx: any) => (
+                              <span key={midx} className="px-2 py-1 bg-[var(--bg-card-hover)] text-[10px] font-bold text-[var(--text-700)] rounded-lg border border-[var(--border)]">
+                                 {dish}
+                              </span>
                            ))}
                         </div>
                      </div>
                   )}
+
+                  {/* Afterschool Snack Section - CONSOLIDATED UNIFIED VIEW */}
+                  { (() => {
+                     const uniqueSnacks = (snackList || []).filter((v, i, a) => a.findIndex(t => t.title === v.title) === i);
+                     if (uniqueSnacks.length === 0) return null;
+
+                     return (
+                        <div className="pt-3 border-t border-[var(--border)] bg-blue-600/5 -mx-4 -mb-4 p-4 space-y-2 animate-fade-in transition-all">
+                           <p className="type-caption flex items-center gap-1.5 text-blue-500 font-bold"><Coffee size={10} /> 오늘의 간식</p>
+                           <div className="grid grid-cols-1 gap-1.5">
+                              {uniqueSnacks.map((snack: any, sidx: any) => (
+                                 <div key={sidx} className="flex items-center justify-between bg-[var(--bg-secondary)] p-2 rounded-lg border border-[var(--border)] shadow-sm">
+                                    <span className="text-[11px] font-black text-[var(--text-900)] flex items-center gap-2">
+                                       <span className="w-1 h-1 rounded-full bg-blue-500" />
+                                       {snack.title?.replace('간식: ', '')}
+                                    </span>
+                                    <span className="type-time text-[var(--text-500)]">{snack.start_time}</span>
+                                 </div>
+                              ))}
+                           </div>
+                        </div>
+                     );
+                  })()}
                </div>
             </div>
           );
-
-
         })}
       </div>
     </section>

@@ -1,19 +1,18 @@
 @import "tailwindcss";
 
 :root {
-  /* [Design Spec] High-Density Compact UI (4pt Grid) */
+  /* Light Mode Tokens */
   --bg-primary: #F9FAFB;
   --bg-secondary: #FFFFFF;
   --bg-card: #FFFFFF;
   --bg-card-hover: #F2F4F6;
   --border: #F2F4F6;
   --border-strong: #E5E8EB;
+  --header-bg: rgba(255, 255, 255, 0.8);
 
-  /* Primary Brand: Linear/Notion Style Blue */
   --primary: #3182F6;
   --primary-bg: #E8F3FF;
   
-  /* Kids Accents: Soft Pastel */
   --jeum-primary: #3182F6;
   --jeum-bg: #E8F3FF;
   --jeum-text: #1B64DA;
@@ -22,24 +21,45 @@
   --eum-bg: #E6F9EF;
   --eum-text: #008A3E;
 
-  /* High-Contrast Typography */
-  --text-900: #191F28; /* Tier 1: Bold Labels */
-  --text-700: #4E5968; /* Tier 2: Main Info */
-  --text-500: #8B95A1; /* Tier 3: Meta Info */
-  --text-400: #B0B8C1; /* Tier 4: Divider/Placeholder */
+  --text-900: #191F28;
+  --text-700: #4E5968;
+  --text-500: #8B95A1;
+  --text-400: #B0B8C1;
 
-  /* Spacing (4pt Grid System) */
-  --sp-05: 2px;
-  --sp-1: 4px;
-  --sp-2: 8px;
-  --sp-3: 12px;
-  --sp-4: 16px;
-  --sp-6: 24px;
-
-  /* Subtle Elevation */
   --shadow-flat: 0 1px 2px rgba(0, 0, 0, 0.05);
   --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
 }
+
+.dark-theme {
+  /* Dark Mode Tokens (Premium Obsidian) */
+  --bg-primary: #0F172A;
+  --bg-secondary: #1E293B;
+  --bg-card: #1E293B;
+  --bg-card-hover: #334155;
+  --border: #334155;
+  --border-strong: #475569;
+  --header-bg: rgba(15, 23, 42, 0.8);
+
+  --primary: #60A5FA;
+  --primary-bg: rgba(96, 165, 250, 0.1);
+  
+  --jeum-primary: #60A5FA;
+  --jeum-bg: rgba(96, 165, 250, 0.1);
+  --jeum-text: #93C5FD;
+  
+  --eum-primary: #34D399;
+  --eum-bg: rgba(52, 211, 153, 0.1);
+  --eum-text: #6EE7B7;
+
+  --text-900: #F8FAFC;
+  --text-700: #CBD5E1;
+  --text-500: #94A3B8;
+  --text-400: #64748B;
+
+  --shadow-flat: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-sm: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+}
+
 
 @theme inline {
   --font-sans: 'Pretendard', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -145,8 +165,10 @@ body {
 
 /* Header (Minimal) */
 header {
-  background: rgba(255, 255, 255, 0.9);
+  background: var(--header-bg);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   padding: 12px 24px;
+  border-color: var(--border) !important;
 }
+
