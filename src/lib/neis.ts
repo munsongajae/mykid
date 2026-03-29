@@ -173,31 +173,34 @@ export async function fetchTimetable(
 }
 
 
-// 목업 데이터 (API 키 미설정 시)
+// 목업 데이터 (API 키 미설정 시 현재 날짜 기준으로 생성)
 function getMockMealData(baseDate: string): MealInfo[] {
   const year = baseDate.substring(0, 4);
   const month = baseDate.substring(4, 6);
-  return [
-    {
-      date: `${year}${month}23`,
-      mealType: '중식',
-      dishes: ['현미밥', '미역국', '돼지불고기', '깍두기', '배추김치', '우유'],
-      calInfo: '650 Kcal',
-    },
-    {
-      date: `${year}${month}24`,
-      mealType: '중식',
-      dishes: ['잡곡밥', '된장국', '고등어구이', '시금치나물', '깍두기'],
-      calInfo: '620 Kcal',
-    },
-    {
-      date: `${year}${month}25`,
-      mealType: '중식',
-      dishes: ['볶음밥', '맑은국', '닭강정', '무생채', '배추김치'],
-      calInfo: '700 Kcal',
-    },
+  
+  // 현재 달의 1일부터 말일까지 더 풍부한 목업 데이터 생성
+  const mockMeals: MealInfo[] = [];
+  const dishOptions = [
+    ['현미밥', '미역국', '돼지불고기', '깍두기', '배추김치', '우유'],
+    ['잡곡밥', '된장국', '고등어구이', '시금치나물', '깍두기'],
+    ['볶음밥', '맑은국', '닭강정', '무생채', '배추김치'],
+    ['차조밥', '콩나물국', '제육볶음', '상추쌈', '쌈장'],
+    ['비빔밥', '계란후라이', '약고추장', '콩나물국', '요구르트']
   ];
+
+  for (let d = 1; d <= 31; d++) {
+    const dayStr = String(d).padStart(2, '0');
+    mockMeals.push({
+      date: `${year}${month}${dayStr}`,
+      mealType: '중식',
+      dishes: dishOptions[d % dishOptions.length],
+      calInfo: `${600 + (d * 5 % 150)} Kcal`,
+    });
+  }
+  
+  return mockMeals;
 }
+
 
 function getMockScheduleData(): SchoolEvent[] {
   return [
