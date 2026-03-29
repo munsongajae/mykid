@@ -69,8 +69,8 @@ export default function ChildTimeline({ child, schedules, timetable, date, onEdi
 
         {/* 2. Personal Schedules Section */}
         {daySchedules.length === 0 && timetable.length === 0 ? (
-          <div className="py-6 text-center bg-gray-50/50 rounded-xl border border-dashed border-gray-100">
-            <p className="text-[10px] font-bold text-gray-300 uppercase tracking-widest">No Events Today</p>
+          <div className="py-6 text-center bg-[var(--bg-card-hover)]/30 rounded-xl border border-dashed border-[var(--border)]">
+            <p className="text-[10px] font-bold text-[var(--text-400)] uppercase tracking-widest">No Events Today</p>
           </div>
         ) : (
           <div className="space-y-2">
@@ -119,16 +119,16 @@ export default function ChildTimeline({ child, schedules, timetable, date, onEdi
 
 
                     {isExpanded && prepItems.length > 0 && (
-                      <div className="mt-3 pt-3 border-t border-gray-100 space-y-2">
+                      <div className="mt-3 pt-3 border-t border-[var(--border)] space-y-2">
                          <p className="type-caption flex items-center gap-1.5 text-orange-600 font-black">챙겨야 할 준비물</p>
-                         <div className="grid grid-cols-1 gap-1">
-                            {prepItems.map((item, id) => (
-                               <div key={id} className="flex items-center gap-2 py-1 px-2 bg-orange-50 rounded-lg">
-                                  <div className="w-1 h-1 rounded-full bg-orange-400" />
-                                  <span className="type-body text-orange-800 font-bold">{item}</span>
-                               </div>
-                            ))}
-                         </div>
+                          <div className="grid grid-cols-1 gap-1">
+                             {prepItems.map((item, id) => (
+                                <div key={id} className="flex items-center gap-2 py-1 px-2 bg-orange-500/10 rounded-lg">
+                                   <div className="w-1 h-1 rounded-full bg-orange-400" />
+                                   <span className="type-body text-orange-500 font-bold">{item}</span>
+                                </div>
+                             ))}
+                          </div>
                       </div>
                     )}
                   </div>

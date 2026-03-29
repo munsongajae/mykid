@@ -127,68 +127,68 @@ export default function ScheduleModal({ child, date, editSchedule, onClose, onSa
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-4 bg-gray-900/40 backdrop-blur-sm animate-fade-in" onClick={onClose}>
-      <div className="bg-white w-full max-w-md rounded-[32px] overflow-hidden shadow-2xl animate-fade-in-up" onClick={e => e.stopPropagation()}>
+    <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fade-in" onClick={onClose}>
+      <div className="bg-[var(--bg-card)] w-full max-w-md rounded-[32px] overflow-hidden shadow-2xl animate-fade-in-up border border-[var(--border)]" onClick={e => e.stopPropagation()}>
         <div className="px-8 pt-8 pb-4 flex items-center justify-between">
           <div>
             <div className="flex items-center gap-2 mb-1">
                <span className={`w-2 h-2 rounded-full ${isJeum ? 'bg-blue-500' : 'bg-emerald-500'}`} />
-               <h2 className={`font-black text-xl text-gray-900`}>{editSchedule ? '일정 수정' : `${name}이 일정`}</h2>
+               <h2 className={`font-black text-xl text-[var(--text-900)]`}>{editSchedule ? '일정 수정' : `${name}이 일정`}</h2>
             </div>
-            <p className="text-sm text-gray-400 font-bold">{format(date, 'yyyy년 M월 d일')}</p>
+            <p className="text-sm text-[var(--text-400)] font-bold">{format(date, 'yyyy년 M월 d일')}</p>
           </div>
           <div className="flex items-center gap-2">
-            {editSchedule && <button onClick={handleDelete} disabled={isDeleting} className="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center text-red-500 hover:bg-red-100"><Trash2 size={18} /></button>}
-            <button onClick={onClose} className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center hover:bg-gray-100 transition-colors"><X size={20} className="text-gray-400" /></button>
+            {editSchedule && <button onClick={handleDelete} disabled={isDeleting} className="w-10 h-10 rounded-full bg-red-500/10 flex items-center justify-center text-red-500 hover:bg-red-500/20"><Trash2 size={18} /></button>}
+            <button onClick={onClose} className="w-10 h-10 rounded-full bg-[var(--bg-card-hover)] flex items-center justify-center hover:bg-[var(--bg-card-hover)]/80 transition-colors"><X size={20} className="text-[var(--text-400)]" /></button>
           </div>
         </div>
 
         <form onSubmit={handleSubmit} className="px-8 pb-8 pt-4 space-y-4">
           {editSchedule?.group_id && (
-             <div className="bg-blue-50/50 p-4 rounded-2xl flex items-center gap-3">
+             <div className="bg-blue-500/5 p-4 rounded-2xl flex items-center gap-3 border border-blue-500/10">
                <AlertCircle size={18} className="text-blue-500 shrink-0" />
                <div className="flex-1">
-                 <p className="type-caption font-black text-blue-600">반복 일정 감지</p>
+                 <p className="type-caption font-black text-blue-500">반복 일정 감지</p>
                  <label className="flex items-center gap-2 mt-2 cursor-pointer select-none">
                     <input type="checkbox" checked={updateAllSeries} onChange={e => setUpdateAllSeries(e.target.checked)} className="custom-checkbox !w-4 !h-4" />
-                    <span className="type-body font-bold text-gray-700">모든 반복 일정 일괄 수정/삭제</span>
+                    <span className="type-body font-bold text-[var(--text-700)]">모든 반복 일정 일괄 수정/삭제</span>
                  </label>
                </div>
              </div>
           )}
 
           <div className="space-y-2">
-            <label className="type-caption uppercase tracking-wider text-gray-400">일정명</label>
-            <input type="text" value={title} onChange={e => setTitle(e.target.value)} placeholder="일정 이름을 입력하세요" className="w-full px-5 py-4 bg-gray-50 border-none rounded-2xl text-gray-900 font-bold outline-none" autoFocus />
+            <label className="type-caption uppercase tracking-wider text-[var(--text-400)]">일정명</label>
+            <input type="text" value={title} onChange={e => setTitle(e.target.value)} placeholder="일정 이름을 입력하세요" className="w-full px-5 py-4 bg-[var(--bg-card-hover)] border-none rounded-2xl text-[var(--text-900)] font-bold outline-none ring-1 ring-inset ring-transparent focus:ring-blue-500/30 transition-all" autoFocus />
           </div>
 
           <div className="space-y-2">
-            <label className="type-caption uppercase tracking-wider text-gray-400">카테고리</label>
+            <label className="type-caption uppercase tracking-wider text-[var(--text-400)]">카테고리</label>
             <div className="grid grid-cols-4 gap-2">
               {CATEGORIES.map(cat => (
-                <button key={cat.value} type="button" onClick={() => setCategory(cat.value)} className={`py-3 rounded-2xl text-[11px] font-black transition-all ${category === cat.value ? 'bg-gray-900 text-white shadow-md' : 'bg-gray-50 text-gray-400'}`}>{cat.label}</button>
+                <button key={cat.value} type="button" onClick={() => setCategory(cat.value)} className={`py-3 rounded-2xl text-[11px] font-black transition-all ${category === cat.value ? 'bg-[var(--text-900)] text-[var(--bg-card)] shadow-md' : 'bg-[var(--bg-card-hover)] text-[var(--text-400)]'}`}>{cat.label}</button>
               ))}
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2"><label className="type-caption uppercase tracking-wider text-gray-400">시작</label>
-            <input type="time" value={startTime} onChange={e => setStartTime(e.target.value)} className="w-full px-5 py-4 bg-gray-50 border-none rounded-2xl text-gray-900 font-bold outline-none" /></div>
-            <div className="space-y-2"><label className="type-caption uppercase tracking-wider text-gray-400">종료</label>
-            <input type="time" value={endTime} onChange={e => setEndTime(e.target.value)} className="w-full px-5 py-4 bg-gray-50 border-none rounded-2xl text-gray-900 font-bold outline-none" /></div>
+            <div className="space-y-2"><label className="type-caption uppercase tracking-wider text-[var(--text-400)]">시작</label>
+            <input type="time" value={startTime} onChange={e => setStartTime(e.target.value)} className="w-full px-5 py-4 bg-[var(--bg-card-hover)] border-none rounded-2xl text-[var(--text-900)] font-bold outline-none transition-all" /></div>
+            <div className="space-y-2"><label className="type-caption uppercase tracking-wider text-[var(--text-400)]">종료</label>
+            <input type="time" value={endTime} onChange={e => setEndTime(e.target.value)} className="w-full px-5 py-4 bg-[var(--bg-card-hover)] border-none rounded-2xl text-[var(--text-900)] font-bold outline-none transition-all" /></div>
           </div>
 
           {!editSchedule && (
-             <div className="p-1.5 bg-gray-50 rounded-2xl flex items-center gap-3">
-               <button type="button" onClick={() => setRepeat4Weeks(!repeat4Weeks)} className={`flex items-center justify-center gap-2 flex-1 py-3 rounded-xl transition-all font-black text-[11px] ${repeat4Weeks ? 'bg-white shadow-sm text-blue-600' : 'text-gray-400'}`}>
+             <div className="p-1.5 bg-[var(--bg-card-hover)] rounded-2xl flex items-center gap-3">
+               <button type="button" onClick={() => setRepeat4Weeks(!repeat4Weeks)} className={`flex items-center justify-center gap-2 flex-1 py-3 rounded-xl transition-all font-black text-[11px] ${repeat4Weeks ? 'bg-[var(--bg-card)] shadow-sm text-blue-500' : 'text-[var(--text-400)]'}`}>
                  <RotateCcw size={14} className={repeat4Weeks ? 'animate-spin-slow' : ''} /> 4주간 매주 반복 입력
                </button>
              </div>
           )}
 
           <div className="space-y-2">
-            <label className="type-caption uppercase tracking-wider text-gray-400 flex items-center gap-2"><Backpack size={12}/> 준비물 (쉼표로 구분)</label>
-            <input type="text" value={preps} onChange={e => setPreps(e.target.value)} placeholder="글러브, 배트, 볼.." className="w-full px-5 py-4 bg-orange-50/50 border border-orange-100 rounded-2xl text-gray-900 font-bold outline-none" />
+            <label className="type-caption uppercase tracking-wider text-[var(--text-400)] flex items-center gap-2"><Backpack size={12}/> 준비물 (쉼표로 구분)</label>
+            <input type="text" value={preps} onChange={e => setPreps(e.target.value)} placeholder="글러브, 배트, 볼.." className="w-full px-5 py-4 bg-orange-500/5 border border-orange-500/10 rounded-2xl text-[var(--text-900)] font-bold outline-none focus:border-orange-500/30 transition-all" />
           </div>
 
           {error && <p className="text-xs text-red-500 font-bold px-1">{error}</p>}

@@ -36,18 +36,18 @@ export default function MiniCalendar({ selectedDate, onDateSelect, schoolEvents 
   };
 
   return (
-    <div className="glass-card !p-6 border-none shadow-lg shadow-gray-200/50">
+    <div className="glass-card !p-6 border-none shadow-lg shadow-black/5 dark:shadow-black/20">
       {/* Month Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-2">
-           <div className="w-8 h-8 rounded-xl bg-blue-50 flex items-center justify-center">
+           <div className="w-8 h-8 rounded-xl bg-blue-500/10 flex items-center justify-center">
              <CalendarDays size={16} className="text-blue-500" />
            </div>
-           <h3 className="font-extrabold text-gray-900 text-base">
+           <h3 className="font-extrabold text-[var(--text-900)] text-base">
              {format(viewMonth, 'yyyy년 M월', { locale: ko })}
            </h3>
         </div>
-        <div className="flex items-center gap-1 bg-gray-50 p-1 rounded-xl">
+        <div className="flex items-center gap-1 bg-[var(--bg-card-hover)] p-1 rounded-xl">
           <button
             onClick={() => setViewMonth(subMonths(viewMonth, 1))}
             className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-white hover:shadow-sm transition-all"
@@ -57,7 +57,7 @@ export default function MiniCalendar({ selectedDate, onDateSelect, schoolEvents 
           </button>
           <button
             onClick={() => setViewMonth(new Date())}
-            className="px-2 text-[10px] font-black text-gray-400 hover:text-gray-700 transition-colors"
+            className="px-2 text-[10px] font-black text-[var(--text-400)] hover:text-[var(--text-700)] transition-colors"
           >
             오늘
           </button>
@@ -78,7 +78,7 @@ export default function MiniCalendar({ selectedDate, onDateSelect, schoolEvents 
             key={d}
             className="text-center text-[11px] font-black"
             style={{
-              color: i === 0 ? '#ff4d4d' : i === 6 ? '#3182f6' : '#8b95a1',
+              color: i === 0 ? '#ff4d4d' : i === 6 ? '#3182f6' : 'var(--text-400)',
             }}
           >
             {d}
@@ -104,7 +104,7 @@ export default function MiniCalendar({ selectedDate, onDateSelect, schoolEvents 
             <button
               key={day.toISOString()}
               onClick={() => onDateSelect(day)}
-              className={`aspect-square relative flex flex-col items-center justify-center rounded-2xl transition-all ${isSelected ? 'bg-gray-900 text-white shadow-md' : isTodayDay ? 'bg-blue-50 text-blue-600' : 'hover:bg-gray-50 text-gray-700'}`}
+              className={`aspect-square relative flex flex-col items-center justify-center rounded-2xl transition-all ${isSelected ? 'bg-blue-600 text-white shadow-md' : isTodayDay ? 'bg-blue-500/10 text-blue-500' : 'hover:bg-[var(--bg-card-hover)] text-[var(--text-700)]'}`}
               title={event?.eventName}
             >
               <span className={`text-xs ${isSelected ? 'font-black' : isTodayDay ? 'font-black' : 'font-bold'} ${!isSelected && !isTodayDay ? (dayOfWeek === 0 ? 'text-[#ff4d4d]' : dayOfWeek === 6 ? 'text-[#3182f6]' : '') : ''}`}>
@@ -121,8 +121,8 @@ export default function MiniCalendar({ selectedDate, onDateSelect, schoolEvents 
       </div>
 
       {/* School Events List */}
-      <div className="mt-6 pt-5 border-t border-gray-50">
-        <h4 className="text-[11px] font-black text-gray-400 mb-3 flex items-center gap-2">
+      <div className="mt-6 pt-5 border-t border-[var(--border)]">
+        <h4 className="text-[11px] font-black text-[var(--text-400)] mb-3 flex items-center gap-2">
           이달의 이벤트 ({schoolEvents.filter(e => e.date.startsWith(format(viewMonth, 'yyyyMM'))).length})
         </h4>
         <div className="space-y-2">
@@ -132,12 +132,12 @@ export default function MiniCalendar({ selectedDate, onDateSelect, schoolEvents 
             .map((event, idx) => (
               <div
                 key={idx}
-                className="flex items-center gap-3 p-2 rounded-xl bg-gray-50/50 hover:bg-gray-50 transition-colors"
+                className="flex items-center gap-3 p-2 rounded-xl bg-[var(--bg-card-hover)]/50 hover:bg-[var(--bg-card-hover)] transition-colors"
               >
-                <div className="flex flex-col items-center justify-center w-8 h-8 rounded-lg bg-orange-100 text-[9px] font-black text-orange-600">
+                <div className="flex flex-col items-center justify-center w-8 h-8 rounded-lg bg-orange-500/10 text-[9px] font-black text-orange-500">
                   <span>{event.date.substring(6, 8)}</span>
                 </div>
-                <span className="text-xs font-bold text-gray-700 truncate flex-1">{event.eventName}</span>
+                <span className="text-xs font-bold text-[var(--text-700)] truncate flex-1">{event.eventName}</span>
               </div>
             ))}
             {schoolEvents.filter(e => e.date.startsWith(format(viewMonth, 'yyyyMM'))).length === 0 && (
