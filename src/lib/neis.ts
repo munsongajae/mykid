@@ -47,9 +47,10 @@ export async function fetchMealInfo(
   const { apiKey, officeCode, schoolCode } = getEnv();
 
   if (!apiKey || !officeCode || !schoolCode) {
-    console.warn('⚠️ NEIS API 환경 변수가 누락되었습니다. Mock 데이터를 사용합니다.', { officeCode, schoolCode });
-    return getMockMealData(startDate);
+    console.warn('⚠️ NEIS API 환경 변수가 누락되었습니다.');
+    return [];
   }
+
 
   try {
     const url = `${BASE_URL}/mealServiceDietInfo?KEY=${apiKey}&Type=json&ATPT_OFCDC_SC_CODE=${officeCode}&SD_SCHUL_CODE=${schoolCode}&MLSV_FROM_YMD=${startDate}&MLSV_TO_YMD=${endDate}`;
@@ -65,17 +66,13 @@ export async function fetchMealInfo(
       }
       if (data.RESULT.CODE !== 'INFO-000') {
         console.error('❌ [NEIS/Meal] API 서버 응답 에러:', data.RESULT.MESSAGE);
-        return getMockMealData(startDate);
+        return [];
       }
     }
 
     if (!data.mealServiceDietInfo) {
-      // head 부분의 에러 코드 확인
-      const headResult = data.RESULT || (data.mealServiceDietInfo?.[0]?.head?.[1]?.RESULT);
-      if (headResult && headResult.CODE !== 'INFO-000') {
-         console.warn(`⚠️ [NEIS/Meal] 데이터 조회 실패: ${headResult.MESSAGE}`);
-      }
-      return getMockMealData(startDate);
+      console.warn('⚠️ [NEIS/Meal] 급식 데이터가 존재하지 않습니다.');
+      return [];
     }
 
     const rows = data.mealServiceDietInfo[1]?.row || [];
@@ -92,9 +89,10 @@ export async function fetchMealInfo(
     }));
   } catch (error) {
     console.error('🔥 [NEIS/Meal] 호출 중 오류:', error);
-    return getMockMealData(startDate);
+    return [];
   }
 }
+
 
 // 학사 일정 조회
 export async function fetchSchoolSchedule(
@@ -104,8 +102,9 @@ export async function fetchSchoolSchedule(
   const { apiKey, officeCode, schoolCode } = getEnv();
 
   if (!apiKey || !officeCode || !schoolCode) {
-    return getMockScheduleData();
+    return [];
   }
+
 
   try {
     const url = `${BASE_URL}/SchoolSchedule?KEY=${apiKey}&Type=json&ATPT_OFCDC_SC_CODE=${officeCode}&SD_SCHUL_CODE=${schoolCode}&AA_FROM_YMD=${startDate}&AA_TO_YMD=${endDate}`;
@@ -116,8 +115,9 @@ export async function fetchSchoolSchedule(
       if (data.RESULT && data.RESULT.CODE !== 'INFO-000') {
         console.error('❌ [NEIS/Schedule] API 서버 응답 에러:', data.RESULT.MESSAGE);
       }
-      return getMockScheduleData();
+      return [];
     }
+
 
     const rows = data.SchoolSchedule[1]?.row || [];
     return rows.map((row: Record<string, string>) => ({
@@ -127,8 +127,9 @@ export async function fetchSchoolSchedule(
     }));
   } catch (error) {
     console.error('🔥 [NEIS/Schedule] 호출 중 오류:', error);
-    return getMockScheduleData();
+    return [];
   }
+
 }
 
 // 시간표 조회
@@ -141,8 +142,9 @@ export async function fetchTimetable(
   const { apiKey, officeCode, schoolCode } = getEnv();
 
   if (!apiKey || !officeCode || !schoolCode) {
-    return getMockTimetableData(date, grade, classNm);
+    return [];
   }
+
 
   try {
     const endpoint = `${schoolLevel}Timetable`;
@@ -170,55 +172,6 @@ export async function fetchTimetable(
     console.error('🔥 [NEIS/Timetable] 호출 중 오류:', error);
     return [];
   }
-}
-
-
-// 목업 데이터 (API 키 미설정 시 현재 날짜 기준으로 생성)
-function getMockMealData(baseDate: string): MealInfo[] {
-  const year = baseDate.substring(0, 4);
-  const month = baseDate.substring(4, 6);
-  
-  // 현재 달의 1일부터 말일까지 더 풍부한 목업 데이터 생성
-  const mockMeals: MealInfo[] = [];
-  const dishOptions = [
-    ['현미밥', '미역국', '돼지불고기', '깍두기', '배추김치', '우유'],
-    ['잡곡밥', '된장국', '고등어구이', '시금치나물', '깍두기'],
-    ['볶음밥', '맑은국', '닭강정', '무생채', '배추김치'],
-    ['차조밥', '콩나물국', '제육볶음', '상추쌈', '쌈장'],
-    ['비빔밥', '계란후라이', '약고추장', '콩나물국', '요구르트']
-  ];
-
-  for (let d = 1; d <= 31; d++) {
-    const dayStr = String(d).padStart(2, '0');
-    mockMeals.push({
-      date: `${year}${month}${dayStr}`,
-      mealType: '중식',
-      dishes: dishOptions[d % dishOptions.length],
-      calInfo: `${600 + (d * 5 % 150)} Kcal`,
-    });
-  }
-  
-  return mockMeals;
-}
-
-
-function getMockScheduleData(): SchoolEvent[] {
-  return [
-    { date: '20260401', eventName: '개교기념일' },
-    { date: '20260415', eventName: '체험학습' },
-    { date: '20260501', eventName: '근로자의날 (휴업)' },
-    { date: '20260610', eventName: '1학기 중간고사' },
-  ];
-}
-
-function getMockTimetableData(date: string, grade: string, classNm: string): TimetableInfo[] {
-  return [
-    { date, grade, classNm, period: '1', subject: '국어' },
-    { date, grade, classNm, period: '2', subject: '수학' },
-    { date, grade, classNm, period: '3', subject: '통합교과(봄)' },
-    { date, grade, classNm, period: '4', subject: '창의적 체험활동' },
-    { date, grade, classNm, period: '5', subject: '체육' },
-  ];
 }
 
 
