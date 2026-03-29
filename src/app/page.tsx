@@ -40,7 +40,9 @@ export default function Home() {
   const [editingSchedule, setEditingSchedule] = useState<Schedule | undefined>(undefined);
   const [activeChild, setActiveChild] = useState<ActiveChild>('jeum');
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
+  const [fontScale, setFontScale] = useState(1);
   const [completedItems, setCompletedItems] = useState<Record<string, boolean>>({});
+
 
 
   const [kidsInfo, setKidsInfo] = useState({
@@ -51,10 +53,20 @@ export default function Home() {
 
   useEffect(() => {
     const savedTheme = localStorage.getItem('theme') as 'dark' | 'light';
-    if (savedTheme) { setTheme(savedTheme); document.body.className = savedTheme === 'dark' ? 'dark-theme' : ''; }
+    if (savedTheme) { 
+      setTheme(savedTheme); 
+      document.body.className = savedTheme === 'dark' ? 'dark-theme' : ''; 
+    }
+    const savedScale = localStorage.getItem('fontScale');
+    if (savedScale) {
+       const scale = parseFloat(savedScale);
+       setFontScale(scale);
+       document.documentElement.style.setProperty('--font-scale', scale.toString());
+    }
     const savedKids = localStorage.getItem('kidsInfo');
     if (savedKids) setKidsInfo(JSON.parse(savedKids));
   }, []);
+
 
 
   const saveKidsInfo = (newInfo: typeof kidsInfo) => { 
@@ -434,15 +446,18 @@ export default function Home() {
           </div>
         )}
 
-        {activeTab === 'settings' && (
-           <SettingsView 
-             kidsInfo={kidsInfo} 
-             saveKidsInfo={saveKidsInfo} 
-             theme={theme} 
-             setTheme={setTheme} 
-             onSchedulesChanged={() => loadSchedules(selectedDate)}
-           />
-        )}
+         {activeTab === 'settings' && (
+            <SettingsView 
+              kidsInfo={kidsInfo} 
+              saveKidsInfo={saveKidsInfo} 
+              theme={theme} 
+              setTheme={(t:any) => { setTheme(t); localStorage.setItem('theme', t); document.body.className = t==='dark' ? 'dark-theme' : ''; }} 
+              fontScale={fontScale}
+              setFontScale={(s:any) => { setFontScale(s); localStorage.setItem('fontScale', s.toString()); document.documentElement.style.setProperty('--font-scale', s.toString()); }}
+              onSchedulesChanged={() => loadSchedules(selectedDate)}
+            />
+         )}
+
 
 
       </div>
@@ -552,7 +567,8 @@ function MealListView({ meals, schedules, kidsInfo, selectedDate }: any) {
 }
 
 
-function SettingsView({ kidsInfo, saveKidsInfo, theme, setTheme, onSchedulesChanged }: any) {
+function SettingsView({ kidsInfo, saveKidsInfo, theme, setTheme, fontScale, setFontScale, onSchedulesChanged }: any) {
+
 
   const [copied, setCopied] = useState(false);
   const [jsonInput, setJsonInput] = useState('');
@@ -677,14 +693,41 @@ function SettingsView({ kidsInfo, saveKidsInfo, theme, setTheme, onSchedulesChan
           ))}
        </div>
 
-       {/* Appearance Section */}
-       <div className="glass-card !p-4 space-y-4">
-          <h3 className="type-section">Appearance</h3>
-          <div className="flex p-1 bg-gray-50 rounded-lg gap-1">
-             <button onClick={() => {setTheme('light'); document.body.className='';}} className={`flex-1 py-2 rounded-md text-[10px] font-black ${theme === 'light' ? 'bg-white shadow-sm' : 'text-gray-400'}`}>LIGHT</button>
-             <button onClick={() => {setTheme('dark'); document.body.className='dark-theme';}} className={`flex-1 py-2 rounded-md text-[10px] font-black ${theme === 'dark' ? 'bg-gray-900 text-white' : 'text-gray-400'}`}>DARK</button>
-          </div>
-       </div>
+        {/* Appearance Section */}
+        <div className="glass-card !p-4 space-y-4">
+           <h3 className="type-section">사용자 환경 설정</h3>
+           
+           <div className="space-y-3">
+              <p className="type-caption font-black text-[var(--text-400)] uppercase">테마 모드</p>
+              <div className="flex p-1 bg-[var(--bg-card-hover)] rounded-lg gap-1">
+                 <button onClick={() => setTheme('light')} className={`flex-1 py-2 rounded-md text-[10px] font-black transition-all ${theme === 'light' ? 'bg-[var(--bg-card)] shadow-sm text-[var(--text-900)]' : 'text-[var(--text-400)]'}`}>LIGHT</button>
+                 <button onClick={() => setTheme('dark')} className={`flex-1 py-2 rounded-md text-[10px] font-black transition-all ${theme === 'dark' ? 'bg-[var(--bg-card)] shadow-sm text-[var(--text-900)]' : 'text-[var(--text-400)]'}`}>DARK</button>
+              </div>
+           </div>
+
+           <div className="space-y-3 pt-2">
+              <p className="type-caption font-black text-[var(--text-400)] uppercase">글자 크기 (Font Size)</p>
+              <div className="flex p-1 bg-[var(--bg-card-hover)] rounded-lg gap-1 overflow-x-auto no-scrollbar">
+                 {[
+                   { label: '최소', val: 0.8 },
+                   { label: '작게', val: 0.9 },
+                   { label: '기본', val: 1 },
+                   { label: '크게', val: 1.1 },
+                   { label: '최대', val: 1.2 }
+                 ].map((size) => (
+                    <button 
+                      key={size.val}
+                      onClick={() => setFontScale(size.val)} 
+                      className={`flex-1 min-w-[48px] py-2 rounded-md text-[10px] font-black transition-all whitespace-nowrap ${fontScale === size.val ? 'bg-[var(--bg-card)] shadow-sm text-[var(--text-900)]' : 'text-[var(--text-400)]'}`}
+                    >
+                       {size.label}
+                    </button>
+                 ))}
+              </div>
+           </div>
+
+        </div>
+
     </section>
   );
 }
