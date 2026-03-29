@@ -354,7 +354,8 @@ export default function Home() {
                if (allDaySnacks.length === 0) return null;
                
                // Deduplicate by title to avoid redundant rows for siblings
-               const uniqueSnacks = allDaySnacks.filter((v, i, a) => a.findIndex(t => t.title === v.title) === i);
+               const uniqueSnacks = allDaySnacks.filter((v: any, i: number, a: any[]) => a.findIndex((t: any) => t.title === v.title) === i);
+
 
                return (
                  <section className="glass-card !p-5 border-none shadow-sm bg-blue-600/5 group animate-fade-in border border-blue-500/10">
@@ -513,8 +514,9 @@ function MealListView({ meals, schedules, kidsInfo, selectedDate }: any) {
 
                   {/* Afterschool Snack Section - CONSOLIDATED UNIFIED VIEW */}
                   { (() => {
-                     const uniqueSnacks = (snackList || []).filter((v, i, a) => a.findIndex(t => t.title === v.title) === i);
+                     const uniqueSnacks = (snackList || []).filter((v: any, i: number, a: any[]) => a.findIndex((t: any) => t.title === v.title) === i);
                      if (uniqueSnacks.length === 0) return null;
+
 
                      return (
                         <div className="pt-3 border-t border-[var(--border)] bg-blue-600/5 -mx-4 -mb-4 p-4 space-y-2 animate-fade-in transition-all">
