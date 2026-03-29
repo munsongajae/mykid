@@ -637,26 +637,27 @@ function SettingsView({ kidsInfo, saveKidsInfo, theme, setTheme, fontScale, setF
        <div className="px-1"><h2 className="type-title">Settings</h2><p className="type-caption">Information and Preferences</p></div>
        
        {/* 1. Prompt Card */}
-       <div className="glass-card !p-4 space-y-3 bg-purple-50/30 border-purple-100">
+       <div className="glass-card !p-4 space-y-3 bg-purple-500/5 border-purple-500/10">
           <div className="flex items-center justify-between">
-             <h3 className="type-section flex items-center gap-1.5 text-purple-700"><Sparkles size={14} /> AI 간식 추출 프롬프트</h3>
+             <h3 className="type-section flex items-center gap-1.5 text-purple-600 dark:text-purple-400"><Sparkles size={14} /> AI 간식 추출 프롬프트</h3>
              <button 
                onClick={copyToClipboard}
-               className={`px-3 py-1 rounded-lg text-[10px] font-black transition-all ${copied ? 'bg-green-500 text-white' : 'bg-purple-600 text-white shadow-sm shadow-purple-200'}`}
+               className={`px-3 py-1 rounded-lg text-[10px] font-black transition-all ${copied ? 'bg-green-500 text-white' : 'bg-purple-600 text-white shadow-sm'}`}
              >
                 {copied ? 'COPIED!' : 'COPY PROMPT'}
              </button>
           </div>
-          <p className="type-caption">간식 식단표 사진을 AI에게 줄 때 아래 프롬프트를 함께 사용해 보세요.</p>
-          <div className="p-3 bg-white/50 rounded-xl border border-purple-50 text-[9px] text-gray-500 font-medium whitespace-pre-wrap leading-relaxed max-h-32 overflow-y-auto">
+          <p className="type-caption text-[var(--text-500)]">간식 식단표 사진을 AI에게 줄 때 아래 프롬프트를 함께 사용해 보세요.</p>
+          <div className="p-3 bg-[var(--bg-primary)] rounded-xl border border-[var(--border)] text-[9px] text-[var(--text-400)] font-medium whitespace-pre-wrap leading-relaxed max-h-32 overflow-y-auto">
              {promptText}
           </div>
        </div>
 
+
        {/* 2. Import JSON Card */}
-       <div className="glass-card !p-4 space-y-3 bg-orange-50/30 border-orange-100">
+       <div className="glass-card !p-4 space-y-3 bg-orange-500/5 border-orange-500/10">
           <div className="flex items-center justify-between">
-             <h3 className="type-section flex items-center gap-1.5 text-orange-700">JSON 데이터 일괄 가져오기</h3>
+             <h3 className="type-section flex items-center gap-1.5 text-orange-600 dark:text-orange-400">JSON 데이터 일괄 가져오기</h3>
              <button 
                onClick={handleImport}
                disabled={importing || !jsonInput}
@@ -665,14 +666,15 @@ function SettingsView({ kidsInfo, saveKidsInfo, theme, setTheme, fontScale, setF
                 {importing ? 'IMPORTING...' : '일괄 추가'}
              </button>
           </div>
-          <p className="type-caption text-orange-600 font-bold">AI가 추출해준 JSON 코드를 아래에 붙여넣으세요.</p>
+          <p className="type-caption text-orange-600 font-bold opacity-80">AI가 추출해준 JSON 코드를 아래에 붙여넣으세요.</p>
           <textarea 
              value={jsonInput}
              onChange={e => setJsonInput(e.target.value)}
              placeholder='[ {"date": "2026-04-01", "snack": "고구마"}, ... ]'
-             className="w-full h-24 p-3 bg-white/70 rounded-xl border border-orange-100 text-[10px] font-mono outline-none ring-1 ring-orange-100/50 focus:ring-orange-400 focus:bg-white transition-all"
+             className="w-full h-24 p-3 bg-[var(--bg-primary)] rounded-xl border border-[var(--border)] text-[10px] text-[var(--text-900)] font-mono outline-none focus:ring-1 focus:ring-orange-400 transition-all placeholder:text-[var(--text-400)]"
           />
        </div>
+
 
        {/* 3. Child Information Section */}
 
@@ -680,18 +682,19 @@ function SettingsView({ kidsInfo, saveKidsInfo, theme, setTheme, fontScale, setF
        <div className="glass-card !p-4 space-y-4">
           <h3 className="type-section">아이 정보 수정</h3>
           {['jeum', 'eum'].map((k:any) => (
-             <div key={k} className={`p-4 rounded-xl border ${k === 'jeum' ? 'bg-blue-50/20 border-blue-50' : 'bg-emerald-50/20 border-emerald-50'} space-y-3`}>
-                <p className="type-caption font-black uppercase text-gray-500">{k === 'jeum' ? 'First Child' : 'Second Child'}</p>
+             <div key={k} className={`p-4 rounded-xl border border-[var(--border)] ${k === 'jeum' ? 'bg-blue-500/5' : 'bg-emerald-500/5'} space-y-3`}>
+                <p className="type-caption font-black uppercase text-[var(--text-400)]">{k === 'jeum' ? 'First Child' : 'Second Child'}</p>
                 <div className="grid grid-cols-2 gap-2">
-                   <input type="text" value={kidsInfo[k].name} onChange={e => saveKidsInfo({...kidsInfo, [k]: {...kidsInfo[k], name: e.target.value}})} className="col-span-2 w-full px-3 py-2 rounded-lg bg-white border-none text-[12px] font-bold outline-none ring-1 ring-gray-100" />
+                   <input type="text" value={kidsInfo[k].name} onChange={e => saveKidsInfo({...kidsInfo, [k]: {...kidsInfo[k], name: e.target.value}})} className="col-span-2 w-full px-3 py-2 rounded-lg bg-[var(--bg-secondary)] border border-[var(--border)] text-[12px] font-bold text-[var(--text-900)] outline-none focus:border-blue-500 transition-all" />
                    <div className="flex gap-2">
-                      <input type="number" value={kidsInfo[k].grade} onChange={e => saveKidsInfo({...kidsInfo, [k]: {...kidsInfo[k], grade: e.target.value}})} className="w-full px-3 py-2 rounded-lg bg-white text-[12px] font-bold ring-1 ring-gray-100 outline-none" />
-                      <input type="number" value={kidsInfo[k].class} onChange={e => saveKidsInfo({...kidsInfo, [k]: {...kidsInfo[k], class: e.target.value}})} className="w-full px-3 py-2 rounded-lg bg-white text-[12px] font-bold ring-1 ring-gray-100 outline-none" />
+                      <input type="number" value={kidsInfo[k].grade} onChange={e => saveKidsInfo({...kidsInfo, [k]: {...kidsInfo[k], grade: e.target.value}})} className="w-full px-3 py-2 rounded-lg bg-[var(--bg-secondary)] border border-[var(--border)] text-[12px] font-bold text-[var(--text-900)] outline-none focus:border-blue-500 transition-all" />
+                      <input type="number" value={kidsInfo[k].class} onChange={e => saveKidsInfo({...kidsInfo, [k]: {...kidsInfo[k], class: e.target.value}})} className="w-full px-3 py-2 rounded-lg bg-[var(--bg-secondary)] border border-[var(--border)] text-[12px] font-bold text-[var(--text-900)] outline-none focus:border-blue-500 transition-all" />
                    </div>
                 </div>
              </div>
           ))}
        </div>
+
 
         {/* Appearance Section */}
         <div className="glass-card !p-4 space-y-4">

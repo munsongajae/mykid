@@ -79,12 +79,13 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* Typography Scale (Compact & High Contrast) */
-.type-title { font-size: calc(20px * var(--font-scale, 1)); font-weight: 800; letter-spacing: -0.02em; color: var(--text-900); }
-.type-section { font-size: calc(14px * var(--font-scale, 1)); font-weight: 700; color: var(--text-900); }
-.type-body { font-size: calc(12px * var(--font-scale, 1)); font-weight: 500; color: var(--text-700); }
-.type-time { font-size: calc(11px * var(--font-scale, 1)); font-weight: 700; color: var(--text-500); font-variant-numeric: tabular-nums; }
-.type-caption { font-size: calc(10px * var(--font-scale, 1)); font-weight: 700; color: var(--text-500); }
+/* Typography Scale (Increased Baseline by 20%) */
+.type-title { font-size: calc(24px * var(--font-scale, 1)); font-weight: 800; letter-spacing: -0.02em; color: var(--text-900); }
+.type-section { font-size: calc(17px * var(--font-scale, 1)); font-weight: 700; color: var(--text-900); }
+.type-body { font-size: calc(14px * var(--font-scale, 1)); font-weight: 500; color: var(--text-700); }
+.type-time { font-size: calc(13px * var(--font-scale, 1)); font-weight: 700; color: var(--text-500); font-variant-numeric: tabular-nums; }
+.type-caption { font-size: calc(12px * var(--font-scale, 1)); font-weight: 700; color: var(--text-500); }
+
 
 
 /* Compact Glass Card (12px Rounded, 16px Padding) */
