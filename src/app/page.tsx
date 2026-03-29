@@ -46,8 +46,8 @@ export default function Home() {
 
 
   const [kidsInfo, setKidsInfo] = useState({
-    jeum: { name: '열음', grade: '2', class: '3' },
-    eum: { name: '지음', grade: '1', class: '1' }
+    jeum: { name: '열음', grade: '3', class: '2' },
+    eum: { name: '지음', grade: '3', class: '3' }
   });
 
 
