@@ -6,7 +6,7 @@ import { format, addDays } from 'date-fns';
 import { X, Plus, Clock, MapPin, Tag, Trash2, Check, Backpack, RotateCcw, AlertCircle } from 'lucide-react';
 
 interface ScheduleModalProps {
-  child: 'jeum' | 'eum';
+  child: 'jeum' | 'eum' | 'mom';
   date: Date;
   editSchedule?: Schedule;
   onClose: () => void;
@@ -19,14 +19,25 @@ const CATEGORIES = [
   { value: 'afterschool', label: '방과후' },
   { value: 'academy', label: '학원' },
   { value: 'etc', label: '기타' },
+  { value: 'work', label: '근무' },
 ] as const;
 
+const MOM_SHIFTS = [
+  { label: '일정', title: '일정', start: '09:00', end: '18:00' },
+  { label: '야근 1', title: '야근 1', start: '17:00', end: '23:00' },
+  { label: '야근 2', title: '야근 2', start: '23:00', end: '08:00' },
+  { label: '야퇴', title: '야퇴 (08:00 퇴근)', start: '08:00', end: '09:00' },
+  { label: '석근', title: '석근', start: '17:00', end: '23:00' },
+  { label: '조근', title: '조근', start: '04:00', end: '10:00' },
+];
+
 export default function ScheduleModal({ child, date, editSchedule, onClose, onSaved, onDeleted }: ScheduleModalProps) {
+  const [activeChild, setActiveChild] = useState<'jeum' | 'eum' | 'mom'>(child);
   const [title, setTitle] = useState(editSchedule?.title || '');
   const [startTime, setStartTime] = useState(editSchedule?.start_time || '09:00');
   const [endTime, setEndTime] = useState(editSchedule?.end_time || '10:00');
   const [location, setLocation] = useState(editSchedule?.location || '');
-  const [category, setCategory] = useState<'school' | 'afterschool' | 'academy' | 'etc'>(editSchedule?.category || 'academy');
+  const [category, setCategory] = useState<'school' | 'afterschool' | 'academy' | 'etc' | 'work'>(editSchedule?.category || (child === 'mom' ? 'work' : 'academy'));
   const [preps, setPreps] = useState(editSchedule?.preparations?.join(', ') || '');
   const [repeat4Weeks, setRepeat4Weeks] = useState(false);
   const [updateAllSeries, setUpdateAllSeries] = useState(false);
@@ -35,8 +46,31 @@ export default function ScheduleModal({ child, date, editSchedule, onClose, onSa
   const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState('');
 
-  const isJeum = child === 'jeum';
-  const name = isJeum ? '열음' : '지음';
+  // Sync default category when switching child (for creation only)
+  useEffect(() => {
+    if (!editSchedule) {
+       setCategory(activeChild === 'mom' ? 'work' : 'academy');
+    }
+  }, [activeChild, editSchedule]);
+
+  const isJeumActual = activeChild === 'jeum';
+  const isEumActual = activeChild === 'eum';
+  const isMomActual = activeChild === 'mom';
+  const nameActual = isJeumActual ? '열음' : isEumActual ? '지음' : '엄마';
+  const themeColorActual = isJeumActual ? 'blue' : isEumActual ? 'emerald' : 'purple';
+
+  // Correct names for the display logic below
+  const isJeum = activeChild === 'jeum';
+  const isEum = activeChild === 'eum';
+  const isMom = activeChild === 'mom';
+  const name = isJeum ? '열음' : isEum ? '지음' : '엄마';
+  const themeColor = isJeum ? 'blue' : isEum ? 'emerald' : 'purple';
+
+  const selectShift = (shift: typeof MOM_SHIFTS[0]) => {
+    setTitle(shift.title);
+    setStartTime(shift.start);
+    setEndTime(shift.end);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,14 +79,14 @@ export default function ScheduleModal({ child, date, editSchedule, onClose, onSa
     setIsSaving(true);
     setError('');
 
-    const preparations = preps.split(',').map(p => p.trim()).filter(Boolean);
+    const preparations = preps.split(',').map((p: string) => p.trim()).filter(Boolean);
     const isSupabaseReady = isSupabaseConfigured();
 
     try {
       if (editSchedule) {
         // Update Logic
         const scheduleData = {
-          child, title: title.trim(), start_time: startTime, end_time: endTime,
+          child: activeChild, title: title.trim(), start_time: startTime, end_time: endTime,
           location: location.trim() || undefined, category, preparations
         };
 
@@ -82,7 +116,7 @@ export default function ScheduleModal({ child, date, editSchedule, onClose, onSa
         for (let i = 0; i < instancesCount; i++) {
           const targetDate = addDays(date, i * 7);
           newSchedules.push({
-            child, title: title.trim(), start_time: startTime, end_time: endTime,
+            child: activeChild, title: title.trim(), start_time: startTime, end_time: endTime,
             location: location.trim() || undefined, category, date: format(targetDate, 'yyyy-MM-dd'),
             preparations, group_id: groupId
           });
@@ -131,10 +165,10 @@ export default function ScheduleModal({ child, date, editSchedule, onClose, onSa
       <div className="bg-[var(--bg-card)] w-full max-w-md rounded-[32px] overflow-hidden shadow-2xl animate-fade-in-up border border-[var(--border)]" onClick={e => e.stopPropagation()}>
         <div className="px-8 pt-8 pb-4 flex items-center justify-between">
           <div>
-            <div className="flex items-center gap-2 mb-1">
-               <span className={`w-2 h-2 rounded-full ${isJeum ? 'bg-blue-500' : 'bg-emerald-500'}`} />
-               <h2 className={`font-black text-xl text-[var(--text-900)]`}>{editSchedule ? '일정 수정' : `${name}이 일정`}</h2>
-            </div>
+             <div className="flex items-center gap-2 mb-1">
+                <span className={`w-2 h-2 rounded-full bg-${themeColor}-500 transition-colors`} />
+                <h2 className={`font-black text-xl text-[var(--text-900)]`}>{editSchedule ? '일정 수정' : `일정 입력`}</h2>
+             </div>
             <p className="text-sm text-[var(--text-400)] font-bold">{format(date, 'yyyy년 M월 d일')}</p>
           </div>
           <div className="flex items-center gap-2">
@@ -144,6 +178,32 @@ export default function ScheduleModal({ child, date, editSchedule, onClose, onSa
         </div>
 
         <form onSubmit={handleSubmit} className="px-8 pb-8 pt-4 space-y-4">
+          {!editSchedule && (
+            <div className="space-y-2">
+              <label className="type-caption uppercase tracking-wider text-[var(--text-400)] font-black">대상 선택</label>
+              <div className="flex p-1 bg-[var(--bg-card-hover)] rounded-2xl gap-1 overflow-hidden">
+                 {[
+                   { id: 'jeum', label: '열음', color: '#3182F6' },
+                   { id: 'eum', label: '지음', color: '#00BA54' },
+                   { id: 'mom', label: '엄마', color: '#A855F7' }
+                 ].map(c => (
+                   <button 
+                    key={c.id} 
+                    type="button" 
+                    onClick={() => setActiveChild(c.id as any)} 
+                    className="flex-1 py-3 rounded-xl text-[11px] font-black transition-all"
+                    style={{
+                      background: activeChild === c.id ? 'var(--bg-card)' : 'transparent',
+                      color: activeChild === c.id ? c.color : 'var(--text-400)',
+                      boxShadow: activeChild === c.id ? 'var(--shadow-flat)' : 'none'
+                    }}
+                   >
+                     {c.label}
+                   </button>
+                 ))}
+              </div>
+            </div>
+          )}
           {editSchedule?.group_id && (
              <div className="bg-blue-500/5 p-4 rounded-2xl flex items-center gap-3 border border-blue-500/10">
                <AlertCircle size={18} className="text-blue-500 shrink-0" />
@@ -157,6 +217,17 @@ export default function ScheduleModal({ child, date, editSchedule, onClose, onSa
              </div>
           )}
 
+          {isMom && (
+            <div className="space-y-2">
+              <label className="type-caption uppercase tracking-wider text-purple-500 font-black">근무 유형 선택</label>
+              <div className="grid grid-cols-3 gap-2">
+                {MOM_SHIFTS.map(shift => (
+                  <button key={shift.label} type="button" onClick={() => selectShift(shift)} className={`py-3 rounded-2xl text-[11px] font-black transition-all ${title === shift.title && startTime === shift.start ? 'bg-purple-600 text-white shadow-md' : 'bg-purple-500/5 text-purple-400 border border-purple-500/10'}`}>{shift.label}</button>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div className="space-y-2">
             <label className="type-caption uppercase tracking-wider text-[var(--text-400)]">일정명</label>
             <input type="text" value={title} onChange={e => setTitle(e.target.value)} placeholder="일정 이름을 입력하세요" className="w-full px-5 py-4 bg-[var(--bg-card-hover)] border-none rounded-2xl text-[var(--text-900)] font-bold outline-none ring-1 ring-inset ring-transparent focus:ring-blue-500/30 transition-all" autoFocus />
@@ -164,9 +235,9 @@ export default function ScheduleModal({ child, date, editSchedule, onClose, onSa
 
           <div className="space-y-2">
             <label className="type-caption uppercase tracking-wider text-[var(--text-400)]">카테고리</label>
-            <div className="grid grid-cols-4 gap-2">
+            <div className="grid grid-cols-5 gap-1.5">
               {CATEGORIES.map(cat => (
-                <button key={cat.value} type="button" onClick={() => setCategory(cat.value)} className={`py-3 rounded-2xl text-[11px] font-black transition-all ${category === cat.value ? 'bg-[var(--text-900)] text-[var(--bg-card)] shadow-md' : 'bg-[var(--bg-card-hover)] text-[var(--text-400)]'}`}>{cat.label}</button>
+                <button key={cat.value} type="button" onClick={() => setCategory(cat.value)} className={`py-3 rounded-2xl text-[10px] font-black transition-all ${category === cat.value ? `bg-${themeColor}-600 text-white shadow-md` : 'bg-[var(--bg-card-hover)] text-[var(--text-400)]'}`}>{cat.label}</button>
               ))}
             </div>
           </div>
@@ -194,7 +265,7 @@ export default function ScheduleModal({ child, date, editSchedule, onClose, onSa
           {error && <p className="text-xs text-red-500 font-bold px-1">{error}</p>}
 
           <div className="pt-2">
-            <button type="submit" disabled={isSaving || isDeleting} className={`w-full py-5 rounded-[22px] font-black text-base shadow-xl transition-all ${isJeum ? 'bg-blue-600 shadow-blue-200' : 'bg-emerald-600 shadow-emerald-200'} text-white flex items-center justify-center gap-2`}>
+            <button type="submit" disabled={isSaving || isDeleting} className={`w-full py-5 rounded-[22px] font-black text-base shadow-xl transition-all bg-${themeColor}-600 shadow-${themeColor}-200 text-white flex items-center justify-center gap-2`}>
               {editSchedule ? <><Check size={18}/> {updateAllSeries ? '연결된 모든 일정 수정' : '이 일정만 수정'}</> : <><Plus size={18}/> {repeat4Weeks ? '4개 일정 동시 추가' : '일정 추가하기'}</>}
             </button>
           </div>

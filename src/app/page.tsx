@@ -5,7 +5,7 @@ import { format, startOfMonth, endOfMonth, addDays } from 'date-fns';
 
 
 import { ko } from 'date-fns/locale';
-import { Plus, RefreshCw, Settings, ChevronRight, Backpack, Utensils, Calendar, ExternalLink, FolderOpen, Trash2, Coffee, Sparkles } from 'lucide-react';
+import { Plus, RefreshCw, Settings, ChevronRight, Backpack, Utensils, Calendar, ExternalLink, FolderOpen, Trash2, Coffee, Sparkles, Sun, Clock, BookOpen, Check, Star, Moon } from 'lucide-react';
 
 
 import BottomNav from '@/components/BottomNav';
@@ -23,7 +23,7 @@ import { supabase, Schedule, FileArchive, isSupabaseConfigured } from '@/lib/sup
 // const SAMPLE_SCHEDULES: Schedule[] = []; // Hardcoded samples removed
 
 
-type ActiveChild = 'jeum' | 'eum';
+type ActiveChild = 'jeum' | 'eum' | 'mom';
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState('home');
@@ -40,14 +40,15 @@ export default function Home() {
   const [editingSchedule, setEditingSchedule] = useState<Schedule | undefined>(undefined);
   const [activeChild, setActiveChild] = useState<ActiveChild>('jeum');
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
-  const [fontScale, setFontScale] = useState(1);
+  const [fontScale, setFontScale] = useState(1.2);
   const [completedItems, setCompletedItems] = useState<Record<string, boolean>>({});
 
 
 
   const [kidsInfo, setKidsInfo] = useState({
     jeum: { name: '열음', grade: '3', class: '2' },
-    eum: { name: '지음', grade: '3', class: '3' }
+    eum: { name: '지음', grade: '3', class: '3' },
+    mom: { name: '엄마', grade: '', class: '' }
   });
 
 
@@ -64,7 +65,10 @@ export default function Home() {
        document.documentElement.style.setProperty('--font-scale', scale.toString());
     }
     const savedKids = localStorage.getItem('kidsInfo');
-    if (savedKids) setKidsInfo(JSON.parse(savedKids));
+    if (savedKids) {
+       const parsed = JSON.parse(savedKids);
+       setKidsInfo(prev => ({ ...prev, ...parsed }));
+    }
   }, []);
 
 
@@ -93,7 +97,8 @@ export default function Home() {
       const end = format(endOfMonth(date), 'yyyyMMdd');
       const res = await fetch(`/api/neis?type=schedule&start=${start}&end=${end}`);
       const json = await res.json();
-      setSchoolEvents(json.data || []);
+      const filtered = (json.data || []).filter((e: any) => e.event !== '토요휴업일');
+      setSchoolEvents(filtered);
     } catch { console.error('학사 일정 로드 실패'); }
   }, []);
 
@@ -137,8 +142,14 @@ export default function Home() {
   }, [selectedDate, loadMealData, loadScheduleData, loadTimetableData, loadSchedules]);
 
 
-  const daySchedulesJeum = schedules.filter( s => s.child === 'jeum' && s.date === format(selectedDate, 'yyyy-MM-dd') ).sort((a,b) => a.start_time.localeCompare(b.start_time));
-  const daySchedulesEum = schedules.filter( s => s.child === 'eum' && s.date === format(selectedDate, 'yyyy-MM-dd') ).sort((a,b) => a.start_time.localeCompare(b.start_time));
+  const daySchedulesAll = schedules.filter(s => s.date === format(selectedDate, 'yyyy-MM-dd'));
+  
+  const daySchedulesJeum = daySchedulesAll.filter(s => s.child === 'jeum' && !s.title?.startsWith('간식:')).sort((a,b) => a.start_time.localeCompare(b.start_time));
+  const daySchedulesEum = daySchedulesAll.filter(s => s.child === 'eum' && !s.title?.startsWith('간식:')).sort((a,b) => a.start_time.localeCompare(b.start_time));
+  const daySchedulesMom = daySchedulesAll.filter(s => s.child === 'mom' && s.category !== 'afterschool').sort((a,b) => a.start_time.localeCompare(b.start_time));
+  
+  // Extra collection for Snacks
+  const daySnacks = daySchedulesAll.filter(s => s.title?.startsWith('간식:'));
 
   const allPrep = [
     ...daySchedulesJeum.flatMap(s => (s.preparations || []).map(p => ({ id: `jeum-${s.id}-${p}`, item: p, child: kidsInfo.jeum.name, sched: s.title, childId: 'jeum' as const }))),
@@ -173,153 +184,155 @@ export default function Home() {
   const handleArchiveUploaded = (f: FileArchive) => setArchives(prev => [f, ...prev]);
   const handleArchiveDeleted = (id: string) => setArchives(prev => prev.filter(a => a.id !== id));
 
-
   return (
     <div className="min-h-screen pb-44 bg-[var(--bg-primary)] text-[var(--text-900)] relative">
-      <header className="sticky top-0 z-40 bg-[var(--header-bg)] backdrop-blur-2xl border-b border-[var(--border)] px-6 py-4">
-
-
-
-
-        <div className="flex flex-col items-center max-w-2xl mx-auto">
-          <div className="w-full flex items-center justify-between mb-2">
-            <h1 className="type-title truncate mr-2">
-              {format(selectedDate, 'M월 d일', { locale: ko })} 
-              <span className="text-gray-400 font-medium ml-1.5">{format(selectedDate, 'EEEE', { locale: ko })}</span>
-            </h1>
-            <div className="flex items-center gap-1.5 shrink-0">
-               <button onClick={() => { setActiveChild('jeum'); setShowModal(true); }} className="w-8 h-8 rounded-lg flex items-center justify-center bg-blue-600 text-white shadow-lg shadow-blue-100 hover:bg-blue-700 active:scale-95 transition-all"><Plus size={16} strokeWidth={3} /></button>
-               <button onClick={() => { setActiveTab('settings'); }} className="w-8 h-8 rounded-lg flex items-center justify-center bg-[var(--bg-card-hover)] border border-[var(--border)] text-[var(--text-500)] hover:bg-[var(--bg-card)] hover:text-blue-500 transition-all"><Settings size={14} /></button>
+      <header className="sticky top-0 z-40 bg-[var(--header-bg)] border-b-2 border-[var(--border)] px-4 py-3 shadow-sm">
+        <div className="max-w-xl mx-auto flex flex-col gap-3">
+          <div className="w-full flex items-center justify-between">
+            <div className="bg-[#FFF2A8] px-4 py-1.5 rounded-full shadow-sm border-2 border-[#FFE8A1]">
+               <h1 className="text-[15px] font-black text-[#644D2F] flex items-center gap-2">
+                 {format(selectedDate, 'M월 d일', { locale: ko })} 
+                 <span className="opacity-60">{format(selectedDate, 'EEEE', { locale: ko })}</span>
+               </h1>
             </div>
-
-          </div>
-          
-          <div className="w-full flex items-center gap-1.5">
-             <button 
-               onClick={() => setSelectedDate(prev => addDays(prev, -1))}
-               className="p-1 px-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border)] text-[10px] font-black text-[var(--text-700)] hover:bg-[var(--bg-card-hover)] active:scale-95 transition-all"
-             >
-               어제
-             </button>
-             <button 
-               onClick={() => setSelectedDate(new Date())}
-               className="p-1 px-4 rounded-xl bg-blue-600/10 border border-blue-500/30 text-[10px] font-black text-blue-500 hover:bg-blue-600/20 active:scale-95 transition-all"
-             >
-               오늘
-             </button>
-             <button 
-               onClick={() => setSelectedDate(prev => addDays(prev, 1))}
-               className="p-1 px-3 rounded-xl bg-orange-600/10 border border-orange-500/30 text-[10px] font-black text-orange-500 hover:bg-orange-600/20 active:scale-95 transition-all"
-             >
-               내일
-             </button>
-             <div className="flex-1" />
-             <button 
-               onClick={() => { loadMealData(selectedDate); loadScheduleData(selectedDate); loadTimetableData(selectedDate); loadSchedules(selectedDate); }} 
-               className="p-1 px-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border)] text-[10px] font-black text-[var(--text-500)] hover:bg-[var(--bg-card-hover)] active:bg-gray-100 flex items-center gap-1 transition-all"
-             >
-               <RefreshCw size={10} /> 전체 리프레시
-             </button>
+            
+            <div className="flex items-center gap-2">
+               <button onClick={() => { loadMealData(selectedDate); loadScheduleData(selectedDate); loadTimetableData(selectedDate); loadSchedules(selectedDate); }} title="새로고침" className="w-8 h-8 rounded-xl flex items-center justify-center bg-[var(--bg-card)] border-2 border-[#F3E5D8] dark:bg-[#1A1D27] dark:border-[#2A2F45] text-orange-400 hover:scale-110 active:scale-95 transition-all"><Clock size={16} strokeWidth={3} /></button>
+               <button onClick={() => { setActiveTab('settings'); }} title="설정" className="w-8 h-8 rounded-xl flex items-center justify-center bg-[#D6EFFF]/30 border-2 border-[#BEDEFF] dark:bg-[#3A4557] dark:border-[#4A5567] text-[#2C5282] dark:text-blue-300 shadow-sm hover:scale-110 active:scale-95 transition-all"><Settings size={18} strokeWidth={3} /></button>
+               <button onClick={() => { 
+                 const next = theme === 'light' ? 'dark' : 'light';
+                 setTheme(next);
+                 localStorage.setItem('theme', next);
+                 document.body.className = next === 'dark' ? 'dark-theme' : '';
+               }} title="테마 전환" className="w-8 h-8 rounded-xl flex items-center justify-center bg-[#FFDBC1]/30 border-2 border-[#FFCCB0] dark:bg-[#4D4036] dark:border-[#5D5046] text-[#854D0E] dark:text-orange-300 shadow-sm hover:scale-110 active:scale-95 transition-all font-black">
+                  {theme === 'light' ? <Moon size={18} strokeWidth={3} /> : <Sun size={18} strokeWidth={3} />}
+               </button>
+            </div>
           </div>
 
+          <div className="w-full flex items-center justify-center bg-[var(--border)]/30 p-1 rounded-full border-2 border-[var(--border)] max-w-xs mx-auto">
+             {[
+               { label: '어제', offset: -1, color: 'bg-[#D6EFFF] border-[#BEDEFF] text-[#2C5282]' },
+               { label: '오늘', offset: 0, color: 'bg-[#FFF2A8] border-[#FFE8A1] text-[#644D2F]' },
+               { label: '내일', offset: 1, color: 'bg-[#FFDBC1] border-[#FFCCB0] text-[#854D0E]' }
+             ].map((tab, idx) => {
+               const isToday = tab.offset === 0;
+               return (
+                 <button 
+                   key={idx}
+                   onClick={() => setSelectedDate(idx === 1 ? new Date() : addDays(new Date(), tab.offset))}
+                   className={`flex-1 py-1 rounded-full text-[11px] font-black transition-all ${isToday ? 'shadow-sm border-2 ' + tab.color : 'text-[var(--text-400)] hover:text-[var(--text-700)]'}`}
+                 >
+                   {tab.label}
+                 </button>
+               );
+             })}
+          </div>
         </div>
-
       </header>
 
-      <div className="max-w-2xl mx-auto px-4 py-4 space-y-4">
+      <div className="max-w-xl mx-auto px-4 py-6 space-y-6">
         {activeTab === 'home' && (
           <>
-            {/* Global Quick Add (Mobile/Desktop Optimized) - Adjusted for Floating Nav */}
-            <div className="fixed bottom-28 right-6 z-50 flex flex-col gap-3">
-
-               <button 
-                onClick={() => { setActiveChild('jeum'); setShowModal(true); }}
-                className="w-12 h-12 rounded-2xl bg-blue-600 text-white shadow-xl shadow-blue-200 border border-blue-500 flex items-center justify-center animate-bounce-slow active:scale-90 transition-all font-black text-sm"
-               >
-                 <span className="flex flex-col items-center">
-                   <Plus size={20} />
-                   <span className="text-[8px] -mt-1">{kidsInfo.jeum.name}</span>
-                 </span>
-               </button>
-               <button 
-                onClick={() => { setActiveChild('eum'); setShowModal(true); }}
-                className="w-12 h-12 rounded-2xl bg-emerald-600 text-white shadow-xl shadow-emerald-200 border border-emerald-500 flex items-center justify-center active:scale-90 transition-all font-black"
-               >
-                 <span className="flex flex-col items-center">
-                   <Plus size={20} />
-                   <span className="text-[8px] -mt-1">{kidsInfo.eum.name}</span>
-                 </span>
-               </button>
-            </div>
-
             <section className="grid grid-cols-2 gap-3">
-              {[ {k:'jeum', c: 'blue', e: '🦋'}, {k:'eum', c: 'emerald', e: '🌿'} ].map(({k, c, e}) => (
-                <div key={k} className={`glass-card !p-4 border-l-[3px] border-${c}-500 transition-colors`}>
-                  <div className={`flex items-center justify-between mb-3 pb-2 border-b border-[var(--border)]`}>
-                    <div className="flex items-center gap-2">
-                       <span>{e}</span><h3 className="type-section text-[var(--text-900)]">{(kidsInfo as any)[k].name}</h3>
-                       <button onClick={() => { setActiveChild(k as ActiveChild); setShowModal(true); }} className="p-1 rounded bg-[var(--bg-card-hover)] text-[var(--text-500)] hover:text-blue-500 hover:bg-[var(--bg-card)] transition-all"><Plus size={10} /></button>
+              {[ 
+                {k:'jeum', c: '#D6EFFF', bc: '#BEDEFF', tc: '#2C5282', e: '🦋', badge: '⭐'}, 
+                {k:'eum', c: '#E1F7DB', bc: '#C5E9BC', tc: '#2F5912', e: '🌱', badge: '☁️'} 
+              ].map(({k, c, bc, tc, e, badge}) => (
+                <div key={k} className="glass-card !p-0 overflow-hidden flex flex-col bg-[var(--bg-card)] border-2 border-[var(--border)]">
+                  <div className="p-3 pb-2 transition-colors" style={{ backgroundColor: theme === 'dark' ? `${c}15` : c }}>
+                    <div className="flex items-center justify-between mb-2">
+                       <div className="flex items-center gap-1.5">
+                          <div className="w-8 h-8 rounded-full bg-[var(--bg-card)] flex items-center justify-center text-lg shadow-sm border-2 border-[var(--border)]">{e}</div>
+                          <h3 className="text-sm font-black" style={{ color: theme === 'dark' ? '#fff' : tc }}>{(kidsInfo as any)[k].name}</h3>
+                       </div>
+                       <div className="relative">
+                          <div className="text-xl opacity-80">{badge}</div>
+                          <span className="absolute inset-0 flex items-center justify-center text-[8px] font-black pt-1">{(kidsInfo as any)[k].grade}-{(kidsInfo as any)[k].class}</span>
+                       </div>
                     </div>
-                    <span className={`type-caption text-${c}-500 bg-${c}-600/10 px-1.5 py-0.5 rounded-md border border-${c}-500/20`}>{(kidsInfo as any)[k].grade}-{(kidsInfo as any)[k].class}</span>
+                    <div className="flex flex-wrap gap-1">
+                       { (k === 'jeum' ? timetableJeum : timetableEum).length > 0 ? (k === 'jeum' ? timetableJeum : timetableEum).map((t, idx) => (
+                          <span key={idx} className="px-1.5 py-0.5 rounded-full text-[8px] font-black bg-[var(--bg-secondary)] border border-[var(--border)]" style={{ color: theme === 'dark' ? '#fff' : tc }}>{t.subject}</span>
+                       )) : (
+                          <span className="px-1.5 py-0.5 rounded-full text-[8px] font-black bg-[var(--bg-secondary)] border border-[var(--border)] opacity-40">시간표 없음</span>
+                       )}
+                    </div>
                   </div>
 
-
-                  {/* School Timetable Summary */}
-                  {(k === 'jeum' ? timetableJeum : timetableEum).length > 0 && (
-                    <div className="flex flex-wrap gap-1 mb-3">
-                       {(k === 'jeum' ? timetableJeum : timetableEum).sort((a,b) => Number(a.period) - Number(b.period)).map((t, idx) => (
-                          <span key={idx} className="px-1.5 py-0.5 bg-gray-50 text-[9px] font-black text-blue-500 rounded border border-gray-100">{t.subject}</span>
-                       ))}
-                    </div>
-                  )}
-
-                  <div className="space-y-1.5">
-                    {(k === 'jeum' ? daySchedulesJeum : daySchedulesEum).map(s => (
-                      <div key={s.id} className="flex items-center group py-0.5">
-                        <span className="type-time w-16 shrink-0">{s.start_time}-{s.end_time}</span>
-                        <span className="type-body flex-1 truncate ml-1 font-bold">{s.title}</span>
-                        <button 
-                          onClick={(e) => { e.stopPropagation(); setEditingSchedule(s as Schedule); setActiveChild(k as ActiveChild); setShowModal(true); }}
-                          className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-md hover:bg-white text-gray-400"
-                        >
-                          <Settings size={10} />
-                        </button>
-                      </div>
-                    ))}
-
-                    {(k === 'jeum' ? daySchedulesJeum : daySchedulesEum).length === 0 && (k === 'jeum' ? timetableJeum : timetableEum).length === 0 && <p className="type-caption italic py-2 text-center text-gray-300">No events</p>}
+                  <div className="p-3 flex-1 bg-[var(--bg-card)] space-y-1.5 min-h-[100px] flex flex-col justify-start">
+                     {(k === 'jeum' ? daySchedulesJeum : daySchedulesEum).length > 0 ? (k === 'jeum' ? daySchedulesJeum : daySchedulesEum).map(s => (
+                        <div key={s.id} className="flex flex-col group py-0.5 border-b border-[var(--border)]/30 last:border-0 border-dashed">
+                           <div className="flex items-center justify-between">
+                              <span className="text-[12px] font-black text-[var(--text-900)] leading-tight truncate">{s.title}</span>
+                              <button onClick={(e) => { e.stopPropagation(); setEditingSchedule(s as Schedule); setActiveChild(k as ActiveChild); setShowModal(true); }} className="opacity-0 group-hover:opacity-100 p-0.5 text-gray-300"><Settings size={8} /></button>
+                           </div>
+                           <span className="text-[9px] font-bold text-[var(--text-400)]">{s.start_time}-{s.end_time}</span>
+                        </div>
+                     )) : (
+                       <div className="py-4 text-center opacity-10 flex flex-col items-center gap-1 h-full justify-center">
+                          <BookOpen size={18} />
+                          <span className="text-[8px] font-black">일정 없음</span>
+                       </div>
+                     )}
                   </div>
-
-
                 </div>
               ))}
+              {/* Mom's Section */}
+              <div className="col-span-2 glass-card !p-3 flex flex-col gap-2 bg-[var(--bg-card)] border-2 border-[var(--border)]">
+                 <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                       <div className="w-8 h-8 rounded-full bg-[var(--bg-secondary)] flex items-center justify-center text-lg border-2 border-[var(--border)]">👩‍💼</div>
+                       <h3 className="text-sm font-black text-[var(--text-900)]">엄마 근무</h3>
+                       <button onClick={() => { setActiveChild('mom'); setShowModal(true); }} className="w-6 h-6 rounded-full bg-[var(--bg-secondary)] flex items-center justify-center text-[var(--text-400)] hover:scale-110 active:scale-95 transition-all border border-[var(--border)]"><Plus size={12} strokeWidth={3} /></button>
+                    </div>
+                    <div className="bg-[var(--bg-secondary)] px-2 py-0.5 rounded-full border border-[var(--border)] text-[8px] font-black text-[var(--text-400)] shadow-sm uppercase">Work</div>
+                 </div>
+                 
+                 <div className="bg-[var(--bg-card-hover)]/40 border border-dashed border-[var(--border)] rounded-xl p-2.5 text-center">
+                    {daySchedulesMom.length > 0 ? (
+                       <div className="space-y-1.5">
+                          {daySchedulesMom.map(s => (
+                             <div key={s.id} className="flex items-center justify-between bg-[var(--bg-card)]/50 p-2 rounded-lg border border-[var(--border)]">
+                                <span className="font-black text-[var(--text-900)] text-[11px]">{s.title}</span>
+                                <span className="text-[9px] font-bold text-gray-400 bg-[var(--bg-card)] px-1.5 py-0.5 rounded-full border border-[var(--border)]">{s.start_time} - {s.end_time}</span>
+                             </div>
+                          ))}
+                       </div>
+                    ) : (
+                       <p className="text-[10px] font-bold text-[var(--text-400)] flex items-center justify-center gap-2">
+                          <Sparkles size={12} className="opacity-30" />
+                          기록된 근무 일정이 없습니다.
+                       </p>
+                    )}
+                 </div>
+              </div>
             </section>
-
             {allPrep.length > 0 && (
-              <section className="space-y-3 animate-fade-in">
-                <div className="flex items-center justify-between px-1">
-                   <h2 className="type-section flex items-center gap-1.5 text-[var(--text-900)]"><Backpack size={14} className="text-orange-500" /> 오늘의 준비물 체크</h2>
-                   <span className="text-[10px] font-black text-orange-500">{completedCount} / {allPrep.length}</span>
+              <section className="space-y-4 animate-fade-in-up">
+                <div className="flex items-center justify-between px-2">
+                   <h2 className="text-lg font-black flex items-center gap-2 text-[var(--text-900)]"><Backpack size={18} className="text-[var(--text-400)]" /> 오늘의 준비물</h2>
                 </div>
-                
-                <div className="grid grid-cols-2 gap-3">
-                   {[ {id:'jeum', c:'blue'}, {id:'eum', c:'emerald'} ].map(({id, c}) => (
-                      <div key={id} className={`glass-card !p-3 border-t-[3px] border-${c}-500/50 bg-[var(--bg-card)]`}>
-                         <p className={`type-caption font-black text-${c}-500 mb-2 px-1`}>{(kidsInfo as any)[id].name}이 것</p>
-                         <div className="space-y-1">
+                <div className="grid grid-cols-2 gap-4">
+                   {[ {id:'jeum', c:'#D6EFFF', tc:'#2C5282', bg: '#D6EFFF'}, {id:'eum', c:'#E1F7DB', tc:'#2F5912', bg: '#E1F7DB'} ].map(({id, c, tc, bg}) => (
+                      <div key={id} className={`glass-card !p-4 flex flex-col gap-4 bg-[var(--bg-card)] border-2`} style={{ borderColor: theme === 'dark' ? 'var(--border)' : `${bg}80` }}>
+                         <div className="flex justify-between items-center px-1">
+                            <p className="text-[13px] font-black" style={{ color: theme === 'dark' ? '#fff' : tc }}>{(kidsInfo as any)[id].name}</p>
+                            <span className="text-xl opacity-80">🎁</span>
+                         </div>
+                         <div className="space-y-2.5">
                             {allPrep.filter(p => p.childId === id).map((p) => (
-                               <div key={p.id} className="flex items-center gap-2 py-2 px-2 rounded-lg hover:bg-[var(--bg-card-hover)] cursor-pointer group transition-colors" onClick={() => handleTogglePrep(p.id)}>
-                                  <input type="checkbox" checked={completedItems[p.id] || false} onChange={() => {}} className={`custom-checkbox !w-4 !h-4 ${id === 'eum' ? '!border-emerald-200 checked:!bg-emerald-500 checked:!border-emerald-500' : ''}`} />
-                                  <div className="flex-1 min-w-0">
-                                     <p className={`text-[11px] font-bold truncate ${completedItems[p.id] ? 'text-[var(--text-400)] line-through' : 'text-[var(--text-900)]'}`}>{p.item}</p>
-                                     <p className="text-[8px] font-medium text-[var(--text-500)] truncate opacity-60">{p.sched}</p>
-                                  </div>
-                               </div>
+                                <div key={p.id} className="p-3 bg-[var(--bg-card-hover)]/50 rounded-2xl border-2 border-[var(--border)] transition-all">
+                                   <div className="flex items-center gap-2.5 min-w-0">
+                                      <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: theme === 'dark' ? '#fff' : tc }} />
+                                      <span className="text-[11px] font-bold truncate text-[var(--text-900)]">{p.item}</span>
+                                   </div>
+                                </div>
                             ))}
                             {allPrep.filter(p => p.childId === id).length === 0 && (
-                               <div className="py-4 text-center opacity-20">
-                                  <Backpack size={12} className="mx-auto mb-1" />
-                                  <p className="text-[8px] font-bold text-[var(--text-400)]">No Prep</p>
+                               <div className="py-6 text-center opacity-20 flex flex-col items-center">
+                                  <Star size={20} className="mb-1" />
+                                  <p className="text-[9px] font-black">챙길 게 없어요!</p>
                                </div>
                             )}
                          </div>
@@ -328,105 +341,92 @@ export default function Home() {
                 </div>
               </section>
             )}
+            <div className="glass-card !p-4 bg-[var(--bg-card)] border-2 border-orange-200/50 dark:border-orange-500/20 animate-fade-in-up relative overflow-hidden">
+               {(() => {
+                 const currentMeal = mealData.find(m => m.date === format(selectedDate, 'yyyyMMdd'));
+                 const hour = new Date().getHours();
+                 const statusMsg = hour < 11 ? "오늘 메뉴는 뭘까요? 😋" : hour < 14 ? "맛있는 점심 시간! 🍱" : "맛있게 먹었나요? ✨";
+                 const isToday = format(selectedDate, 'yyyyMMdd') === format(new Date(), 'yyyyMMdd');
 
-
-
-            {/* Meal Widget - High Density Layout */}
-            <section className="glass-card !p-5 border-none shadow-sm bg-orange-600/5 group animate-fade-in border border-orange-500/10">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-3">
-                   <div className="w-10 h-10 rounded-xl bg-orange-600/10 flex items-center justify-center">
-                      <Utensils size={18} className="text-orange-500" />
-                   </div>
-                   <div>
-                      <h2 className="type-section text-[var(--text-900)]">오늘의 급식</h2>
-                      <p className="type-caption text-orange-500/70">건강하고 맛있는 점심 시간!</p>
-                   </div>
-                </div>
-                <div onClick={() => setActiveTab('meal')} className="flex items-center gap-1.5 p-2 rounded-lg bg-[var(--bg-card)] border border-[var(--border)] text-[var(--text-700)] hover:bg-white/10 cursor-pointer active:scale-95 transition-all">
-                  <span className="text-[10px] font-black">식단 전체보기</span>
-                  <ChevronRight size={16} className="text-orange-300" />
-                </div>
-              </div>
-              
-              <div className="flex flex-wrap gap-1.5">
-                {mealData.find(m => m.date === format(selectedDate, 'yyyyMMdd'))?.dishes.map((dish, idx) => (
-                   <span key={idx} className="px-2 py-1 bg-[var(--bg-card)] border border-[var(--border)] text-[10px] font-bold text-[var(--text-700)] rounded-lg shadow-sm">
-                      {dish}
-                   </span>
-                )) || (
-                   <p className="type-caption text-[var(--text-400)] italic py-2">오늘의 급식 정보가 없습니다.</p>
-                )}
-              </div>
-            </section>
-
-            {/* Afterschool Snack Details - Unified Consolidated View */}
-            { (() => {
-               const allDaySnacks = [...daySchedulesJeum, ...daySchedulesEum].filter(s => s.title.includes('간식'));
-               if (allDaySnacks.length === 0) return null;
-               
-               // Deduplicate by title to avoid redundant rows for siblings
-               const uniqueSnacks = allDaySnacks.filter((val: any, idx: number, arr: any[]) => {
-                 return arr.findIndex((item: any) => item.title === val.title) === idx;
-               });
-
-
-
-               return (
-                 <section className="glass-card !p-5 border-none shadow-sm bg-blue-600/5 group animate-fade-in border border-blue-500/10">
-                   <div className="flex items-center gap-3 mb-4">
-                      <div className="w-10 h-10 rounded-xl bg-blue-600/10 flex items-center justify-center">
-                         <Coffee size={18} className="text-blue-500" />
-                      </div>
-                      <div>
-                         <h2 className="type-section text-[var(--text-900)]">오늘의 간식</h2>
-                         <p className="type-caption text-blue-500/70">맛있는 간식 타임입니다!</p>
-                      </div>
-                   </div>
-                   <div className="grid grid-cols-1 gap-2">
-                      {uniqueSnacks.map((snack, idx) => (
-                          <div key={idx} className="flex items-center justify-between p-3 bg-[var(--bg-card)] rounded-xl border border-[var(--border)] shadow-sm">
-                             <span className="text-[12px] font-black text-[var(--text-900)] flex items-center gap-2">
-                                <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
-                                {snack.title.replace('간식: ', '')}
-                             </span>
-                             <span className="type-time text-[var(--text-500)]">{snack.start_time}</span>
+                 return (
+                   <>
+                     <div className="absolute top-0 right-0 p-3 opacity-10">
+                       <Utensils size={64} className="rotate-12" />
+                     </div>
+                     
+                     <div className="flex items-center justify-between mb-4 relative z-10">
+                       <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-2xl bg-orange-100 dark:bg-orange-950/30 flex items-center justify-center border-2 border-orange-200 dark:border-orange-900/30 shadow-sm animate-bounce-slow">
+                             <span className="text-xl">🍚</span>
                           </div>
-                      ))}
-                   </div>
-                 </section>
-               );
-            })()}
+                          <div>
+                             <h2 className="text-[15px] font-black text-[var(--text-900)]">오늘의 급식</h2>
+                             <p className="text-[10px] font-black text-orange-500/80">{isToday ? statusMsg : "그날의 식단표!"}</p>
+                          </div>
+                       </div>
+                       <div className="flex flex-col items-end gap-1">
+                          <button onClick={() => setActiveTab('meal')} className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-orange-500 text-white shadow-sm hover:scale-105 active:scale-95 transition-all outline-none">
+                            <span className="text-[10px] font-black">전체보기</span>
+                            <ChevronRight size={12} strokeWidth={3} />
+                          </button>
+                          {currentMeal?.calInfo && <span className="text-[9px] font-black text-[var(--text-400)]">{currentMeal.calInfo}</span>}
+                       </div>
+                     </div>
 
-
-
-
+                     <div className="flex flex-wrap gap-1.5 relative z-10">
+                       {currentMeal?.dishes.map((dish, idx) => {
+                          const colors = ['bg-orange-50 text-orange-700 border-orange-100', 'bg-emerald-50 text-emerald-700 border-emerald-100', 'bg-blue-50 text-blue-700 border-blue-100', 'bg-purple-50 text-purple-700 border-purple-100'];
+                          const darkColors = ['dark:bg-orange-900/20 dark:text-orange-300 dark:border-orange-800/30', 'dark:bg-emerald-900/20 dark:text-emerald-300 dark:border-emerald-800/30', 'dark:bg-blue-900/20 dark:text-blue-300 dark:border-blue-800/30', 'dark:bg-purple-900/20 dark:text-purple-300 dark:border-purple-800/30'];
+                          const colorIdx = idx % colors.length;
+                          
+                          return (
+                            <span key={idx} className={`px-2.5 py-1.5 border-2 ${colors[colorIdx]} ${darkColors[colorIdx]} text-[11px] font-black rounded-xl shadow-sm hover:-translate-y-0.5 transition-transform cursor-default whitespace-nowrap`}>
+                               {dish}
+                            </span>
+                          );
+                       }) || (
+                          <div className="w-full py-6 text-center opacity-30 flex flex-col items-center gap-2">
+                             <span className="text-3xl">🫙</span>
+                             <p className="text-[11px] font-black">급식 정보가 없어요.</p>
+                          </div>
+                       )}
+                     </div>
+                   </>
+                 );
+               })()}
+                 
+               {/* Specialized Snack Section in Meal Widget */}
+               {daySnacks.length > 0 && (
+                 <div className="mt-4 pt-4 border-t-2 border-dashed border-[var(--border)] animate-fade-in-up relative z-10">
+                    <div className="flex items-center gap-2 mb-2">
+                       <div className="w-6 h-6 rounded-lg bg-[var(--bg-secondary)] flex items-center justify-center text-[var(--text-400)] shadow-sm">
+                         <Coffee size={12} strokeWidth={3} />
+                       </div>
+                       <span className="text-[11px] font-black text-[var(--text-400)] uppercase tracking-tighter">오늘의 간식</span>
+                    </div>
+                    <div className="grid grid-cols-1 gap-2">
+                       {daySnacks.filter((s,i,a) => a.findIndex(t => t.title === s.title) === i).map((s, idx) => (
+                          <div key={idx} className="bg-[var(--bg-secondary)]/50 p-2.5 rounded-2xl border border-[var(--border)] flex items-center justify-between hover:bg-[var(--bg-card-hover)] transition-colors">
+                             <span className="text-[11px] font-bold text-[var(--text-900)]">{s.title?.replace('간식: ', '')}</span>
+                             <span className="text-[9px] font-black text-blue-500 bg-blue-50 dark:bg-blue-900/30 px-2 py-1 rounded-full border border-blue-100 dark:border-blue-800/30">{s.start_time} - {s.end_time}</span>
+                          </div>
+                       ))}
+                    </div>
+                 </div>
+               )}
+            </div>
           </>
         )}
-
-        {/* Missing Tabs Content Restored */}
         {activeTab === 'schedule' && (
-          <section className="space-y-4 animate-fade-in">
-             <MiniCalendar selectedDate={selectedDate} onDateSelect={setSelectedDate} schoolEvents={schoolEvents} />
+          <section className="space-y-6 animate-fade-in-up">
+             <div className="glass-card !p-2 bg-[var(--bg-card)]"><MiniCalendar selectedDate={selectedDate} onDateSelect={setSelectedDate} schoolEvents={schoolEvents} /></div>
              <div className="space-y-4">
-                <ChildTimeline 
-                  child="jeum" 
-                  schedules={daySchedulesJeum} 
-                  timetable={timetableJeum}
-                  date={selectedDate} 
-                  onEdit={(s) => { setEditingSchedule(s as Schedule); setActiveChild('jeum'); setShowModal(true); }}
-                />
-                <ChildTimeline 
-                  child="eum" 
-                  schedules={daySchedulesEum} 
-                  timetable={timetableEum}
-                  date={selectedDate} 
-                  onEdit={(s) => { setEditingSchedule(s as Schedule); setActiveChild('eum'); setShowModal(true); }}
-                />
+                <ChildTimeline child="jeum" schedules={daySchedulesJeum} timetable={timetableJeum} date={selectedDate} onEdit={(s:any) => { setEditingSchedule(s); setActiveChild('jeum'); setShowModal(true); }} onAdd={() => { setActiveChild('jeum'); setShowModal(true); }} />
+                <ChildTimeline child="eum" schedules={daySchedulesEum} timetable={timetableEum} date={selectedDate} onEdit={(s:any) => { setEditingSchedule(s); setActiveChild('eum'); setShowModal(true); }} onAdd={() => { setActiveChild('eum'); setShowModal(true); }} />
+                <ChildTimeline child="mom" schedules={daySchedulesMom} timetable={[]} date={selectedDate} onEdit={(s:any) => { setEditingSchedule(s); setActiveChild('mom'); setShowModal(true); }} onAdd={() => { setActiveChild('mom'); setShowModal(true); }} />
              </div>
           </section>
         )}
-
 
 
 
@@ -680,19 +680,32 @@ function SettingsView({ kidsInfo, saveKidsInfo, theme, setTheme, fontScale, setF
 
 
        <div className="glass-card !p-4 space-y-4">
-          <h3 className="type-section">아이 정보 수정</h3>
-          {['jeum', 'eum'].map((k:any) => (
-             <div key={k} className={`p-4 rounded-xl border border-[var(--border)] ${k === 'jeum' ? 'bg-blue-500/5' : 'bg-emerald-500/5'} space-y-3`}>
-                <p className="type-caption font-black uppercase text-[var(--text-400)]">{k === 'jeum' ? 'First Child' : 'Second Child'}</p>
-                <div className="grid grid-cols-2 gap-2">
-                   <input type="text" value={kidsInfo[k].name} onChange={e => saveKidsInfo({...kidsInfo, [k]: {...kidsInfo[k], name: e.target.value}})} className="col-span-2 w-full px-3 py-2 rounded-lg bg-[var(--bg-secondary)] border border-[var(--border)] text-[12px] font-bold text-[var(--text-900)] outline-none focus:border-blue-500 transition-all" />
-                   <div className="flex gap-2">
-                      <input type="number" value={kidsInfo[k].grade} onChange={e => saveKidsInfo({...kidsInfo, [k]: {...kidsInfo[k], grade: e.target.value}})} className="w-full px-3 py-2 rounded-lg bg-[var(--bg-secondary)] border border-[var(--border)] text-[12px] font-bold text-[var(--text-900)] outline-none focus:border-blue-500 transition-all" />
-                      <input type="number" value={kidsInfo[k].class} onChange={e => saveKidsInfo({...kidsInfo, [k]: {...kidsInfo[k], class: e.target.value}})} className="w-full px-3 py-2 rounded-lg bg-[var(--bg-secondary)] border border-[var(--border)] text-[12px] font-bold text-[var(--text-900)] outline-none focus:border-blue-500 transition-all" />
-                   </div>
-                </div>
-             </div>
-          ))}
+          <h3 className="type-section">가족 정보 수정</h3>
+          {['jeum', 'eum', 'mom'].map((k:any) => {
+             const info = (kidsInfo as any)[k];
+             if (!info) return null;
+             
+             return (
+               <div key={k} className={`p-4 rounded-xl border border-[var(--border)] ${k === 'jeum' ? 'bg-blue-500/5' : k === 'eum' ? 'bg-emerald-500/5' : 'bg-purple-500/5'} space-y-3`}>
+                  <p className="type-caption font-black uppercase text-[var(--text-400)]">{k === 'jeum' ? 'First Child' : k === 'eum' ? 'Second Child' : 'Parent'}</p>
+                  <div className="grid grid-cols-2 gap-2">
+                     <input type="text" value={info.name || ''} onChange={e => saveKidsInfo({...kidsInfo, [k]: {...info, name: e.target.value}})} placeholder="이름" className="col-span-2 w-full px-3 py-2 rounded-lg bg-[var(--bg-secondary)] border border-[var(--border)] text-[12px] font-bold text-[var(--text-900)] outline-none focus:border-blue-500 transition-all placeholder:text-gray-400" />
+                     {k !== 'mom' && (
+                       <div className="flex gap-2 w-full col-span-2">
+                          <div className="flex-1 flex items-center gap-2 bg-[var(--bg-secondary)] px-3 py-2 rounded-lg border border-[var(--border)]">
+                             <span className="text-[10px] font-black text-gray-400">학년</span>
+                             <input type="number" value={info.grade} onChange={e => saveKidsInfo({...kidsInfo, [k]: {...info, grade: e.target.value}})} className="w-full bg-transparent text-[12px] font-bold text-[var(--text-900)] outline-none" />
+                          </div>
+                          <div className="flex-1 flex items-center gap-2 bg-[var(--bg-secondary)] px-3 py-2 rounded-lg border border-[var(--border)]">
+                             <span className="text-[10px] font-black text-gray-400">반</span>
+                             <input type="number" value={info.class} onChange={e => saveKidsInfo({...kidsInfo, [k]: {...info, class: e.target.value}})} className="w-full bg-transparent text-[12px] font-bold text-[var(--text-900)] outline-none" />
+                          </div>
+                       </div>
+                     )}
+                  </div>
+               </div>
+             );
+          })}
        </div>
 
 
@@ -700,14 +713,6 @@ function SettingsView({ kidsInfo, saveKidsInfo, theme, setTheme, fontScale, setF
         <div className="glass-card !p-4 space-y-4">
            <h3 className="type-section">사용자 환경 설정</h3>
            
-           <div className="space-y-3">
-              <p className="type-caption font-black text-[var(--text-400)] uppercase">테마 모드</p>
-              <div className="flex p-1 bg-[var(--bg-card-hover)] rounded-lg gap-1">
-                 <button onClick={() => setTheme('light')} className={`flex-1 py-2 rounded-md text-[10px] font-black transition-all ${theme === 'light' ? 'bg-[var(--bg-card)] shadow-sm text-[var(--text-900)]' : 'text-[var(--text-400)]'}`}>LIGHT</button>
-                 <button onClick={() => setTheme('dark')} className={`flex-1 py-2 rounded-md text-[10px] font-black transition-all ${theme === 'dark' ? 'bg-[var(--bg-card)] shadow-sm text-[var(--text-900)]' : 'text-[var(--text-400)]'}`}>DARK</button>
-              </div>
-           </div>
-
            <div className="space-y-3 pt-2">
               <p className="type-caption font-black text-[var(--text-400)] uppercase">글자 크기 (Font Size)</p>
               <div className="flex p-1 bg-[var(--bg-card-hover)] rounded-lg gap-1 overflow-x-auto no-scrollbar">

@@ -3,12 +3,12 @@
 -- 스케줄 테이블
 create table if not exists public.schedules (
   id uuid primary key default gen_random_uuid(),
-  child text not null check (child in ('jeum', 'eum')),
+  child text not null check (child in ('jeum', 'eum', 'mom')),
   title text not null,
   start_time text not null,  -- 'HH:MM' 형식
   end_time text not null,    -- 'HH:MM' 형식
   location text,
-  category text not null check (category in ('school', 'afterschool', 'academy', 'etc')),
+  category text not null check (category in ('school', 'afterschool', 'academy', 'etc', 'work')),
   date date not null,
   color text,
   created_at timestamptz not null default now()
@@ -17,7 +17,7 @@ create table if not exists public.schedules (
 -- 파일 아카이브 테이블
 create table if not exists public.file_archives (
   id uuid primary key default gen_random_uuid(),
-  child text not null check (child in ('jeum', 'eum', 'both')),
+  child text not null check (child in ('jeum', 'eum', 'mom', 'both', 'all')),
   title text not null,
   file_url text not null,
   file_type text not null check (file_type in ('image', 'pdf')),

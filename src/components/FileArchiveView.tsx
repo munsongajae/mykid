@@ -14,7 +14,7 @@ export default function FileArchiveView({ archives, onUploaded, onDeleted }: Fil
   const [isUploading, setIsUploading] = useState(false);
   const [previewItem, setPreviewItem] = useState<FileArchive | null>(null);
   const [title, setTitle] = useState('');
-  const [child, setChild] = useState<'jeum' | 'eum' | 'both'>('both');
+  const [child, setChild] = useState<'jeum' | 'eum' | 'mom' | 'both' | 'all'>('all');
   const [description, setDescription] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -78,11 +78,13 @@ export default function FileArchiveView({ archives, onUploaded, onDeleted }: Fil
     }
   };
 
-  const CHILD_LABEL = { jeum: '열음', eum: '지음', both: '공통' };
-  const CHILD_COLOR = {
+  const CHILD_LABEL = { jeum: '열음', eum: '지음', mom: '엄마', both: '아이공통', all: '전체공통' };
+  const CHILD_COLOR: Record<string, {bg: string, color: string}> = {
     jeum: { bg: 'rgba(59,130,246,0.15)', color: '#3b82f6' },
     eum: { bg: 'rgba(16,185,129,0.15)', color: '#10b981' },
+    mom: { bg: 'rgba(168,85,247,0.15)', color: '#a855f7' },
     both: { bg: 'rgba(139,92,246,0.15)', color: '#8b5cf6' },
+    all: { bg: 'rgba(107,114,128,0.15)', color: '#6b7280' },
   };
 
 
@@ -102,14 +104,14 @@ export default function FileArchiveView({ archives, onUploaded, onDeleted }: Fil
             placeholder="파일 제목 (예: 3월 학원 시간표)"
             className="input-field"
           />
-          <div className="grid grid-cols-3 gap-2">
-            {(['jeum', 'eum', 'both'] as const).map(c => (
+          <div className="grid grid-cols-5 gap-1.5">
+            {(['jeum', 'eum', 'mom', 'both', 'all'] as const).map(c => (
               <button
                 key={c}
                 id={`archive-child-${c}`}
                 type="button"
                 onClick={() => setChild(c)}
-                className="py-2 rounded-xl text-xs font-semibold transition-all"
+                className="py-2 rounded-xl text-[10px] font-black transition-all"
                 style={{
                   background: child === c ? CHILD_COLOR[c].bg : 'rgba(255,255,255,0.05)',
                   color: child === c ? CHILD_COLOR[c].color : 'var(--text-muted)',

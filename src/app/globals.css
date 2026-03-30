@@ -1,182 +1,194 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Noto+Sans+KR:wght@400;700;900&display=swap');
 @import "tailwindcss";
 
 :root {
-  /* Light Mode Tokens */
-  --bg-primary: #F9FAFB;
+  --font-main: 'Inter', 'Noto Sans KR', sans-serif;
+  /* Pastel Illustration Theme Tokens */
+  --bg-primary: #FFF9F2; /* Creamy Parchment */
   --bg-secondary: #FFFFFF;
   --bg-card: #FFFFFF;
-  --bg-card-hover: #F2F4F6;
-  --border: #F2F4F6;
-  --border-strong: #E5E8EB;
-  --header-bg: rgba(255, 255, 255, 0.8);
+  --bg-card-hover: #FFFDFB;
+  --border: #F3E5D8; /* Soft Tannish Border */
+  --border-strong: #E5D5C5;
+  --header-bg: rgba(255, 249, 242, 0.9);
 
-  --primary: #3182F6;
+  /* Shared Pastel Palette */
+  --pastel-yellow: #FFF2A8;
+  --pastel-blue: #D6EFFF;
+  --pastel-green: #E1F7DB;
+  --pastel-orange: #FFDBC1;
+  --pastel-purple: #E9DFFF;
+  --pastel-gray: #EAECEF;
+
+  --primary: #5C8ED6; /* Soft Muted Blue */
   --primary-bg: #E8F3FF;
   
-  --jeum-primary: #3182F6;
-  --jeum-bg: #E8F3FF;
-  --jeum-text: #1B64DA;
+  --jeum-primary: #76A9FA; /* Sky Blue */
+  --jeum-bg: #D6EFFF;
+  --jeum-text: #2C5282;
   
-  --eum-primary: #00BA54;
-  --eum-bg: #E6F9EF;
-  --eum-text: #008A3E;
+  --eum-primary: #82C91E; /* Leaf Green */
+  --eum-bg: #E1F7DB;
+  --eum-text: #2F5912;
 
-  --text-900: #191F28;
-  --text-700: #4E5968;
-  --text-500: #8B95A1;
-  --text-400: #B0B8C1;
+  --text-900: #2D3748; /* Soft Charcoal */
+  --text-700: #4A5568;
+  --text-500: #718096;
+  --text-400: #A0AEC0;
 
-  --shadow-flat: 0 1px 2px rgba(0, 0, 0, 0.05);
-  --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  --shadow-warm: 0 10px 25px -5px rgba(183, 153, 123, 0.15), 0 8px 10px -6px rgba(183, 153, 123, 0.1);
+  --shadow-flat: 0 4px 6px rgba(183, 153, 123, 0.1);
 
-  --font-scale: 1;
+  --font-scale: 1.2;
 }
 
-
 .dark-theme {
-  /* Dark Mode Tokens (Premium Obsidian) */
-  --bg-primary: #0F172A;
-  --bg-secondary: #1E293B;
-  --bg-card: #1E293B;
-  --bg-card-hover: #334155;
-  --border: #334155;
-  --border-strong: #475569;
-  --header-bg: rgba(15, 23, 42, 0.8);
+  --bg-primary: #12141C; /* Midnight Navy */
+  --bg-secondary: #1A1D27;
+  --bg-card: #1E2230;
+  --bg-card-hover: #262B3D;
+  --border: #2A2F45;
+  --border-strong: #323A5A;
+  --header-bg: rgba(18, 20, 28, 0.9);
 
-  --primary: #60A5FA;
-  --primary-bg: rgba(96, 165, 250, 0.1);
-  
-  --jeum-primary: #60A5FA;
-  --jeum-bg: rgba(96, 165, 250, 0.1);
-  --jeum-text: #93C5FD;
-  
-  --eum-primary: #34D399;
-  --eum-bg: rgba(52, 211, 153, 0.1);
-  --eum-text: #6EE7B7;
+  /* Shared Pastel Palette for Dark Mode */
+  --pastel-yellow: #4D4A3A;
+  --pastel-blue: #3A4557;
+  --pastel-green: #374636;
+  --pastel-orange: #4D4036;
+  --pastel-purple: #3F3A4D;
+  --pastel-gray: #2A2F45;
 
-  --text-900: #F8FAFC;
+  --text-900: #F1F5F9;
   --text-700: #CBD5E1;
   --text-500: #94A3B8;
   --text-400: #64748B;
 
-  --shadow-flat: 0 1px 2px rgba(0, 0, 0, 0.3);
-  --shadow-sm: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
-
-  --font-scale: 1;
+  --shadow-warm: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
 }
-
-
 
 @theme inline {
   --font-sans: 'Pretendard', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-pencil: 'Gowun Batang', serif;
 }
 
 body {
   background: var(--bg-primary);
+  /* Subtle pattern background */
+  background-image: radial-gradient(#F3E5D8 0.8px, transparent 0.8px);
+  background-size: 24px 24px;
   color: var(--text-900);
-  font-family: var(--font-sans);
-  line-height: 1.4; /* Slightly tighter leading */
+  font-family: var(--font-main);
+  line-height: 1.5;
   -webkit-font-smoothing: antialiased;
 }
 
-/* Typography Scale (Increased Baseline by 20%) */
-.type-title { font-size: calc(24px * var(--font-scale, 1)); font-weight: 800; letter-spacing: -0.02em; color: var(--text-900); }
-.type-section { font-size: calc(17px * var(--font-scale, 1)); font-weight: 700; color: var(--text-900); }
-.type-body { font-size: calc(14px * var(--font-scale, 1)); font-weight: 500; color: var(--text-700); }
-.type-time { font-size: calc(13px * var(--font-scale, 1)); font-weight: 700; color: var(--text-500); font-variant-numeric: tabular-nums; }
-.type-caption { font-size: calc(12px * var(--font-scale, 1)); font-weight: 700; color: var(--text-500); }
+/* Typography Scale */
+.type-title { font-size: calc(26px * var(--font-scale, 1)); font-weight: 800; color: var(--text-900); }
+.type-section { font-size: calc(18px * var(--font-scale, 1)); font-weight: 800; color: var(--text-900); }
+.type-body { font-size: calc(14px * var(--font-scale, 1)); font-weight: 700; color: var(--text-700); }
+.type-time { font-size: calc(13px * var(--font-scale, 1)); font-weight: 800; color: var(--text-500); font-variant-numeric: tabular-nums; }
+.type-caption { font-size: calc(12px * var(--font-scale, 1)); font-weight: 800; color: var(--text-500); text-transform: uppercase; letter-spacing: 0.05em; }
 
-
-
-/* Compact Glass Card (12px Rounded, 16px Padding) */
+/* Illustration Card (Large 24px+ Rounded, Soft Thick Borders) */
 .glass-card {
   background: var(--bg-card);
-  border-radius: 12px;
-  padding: 16px;
-  box-shadow: var(--shadow-flat);
-  border: 1px solid var(--border);
-  transition: background 0.15s ease;
+  border-radius: 28px;
+  padding: 24px;
+  box-shadow: var(--shadow-warm);
+  border: 2px solid var(--border);
+  transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 .glass-card:hover {
-  background: var(--bg-card-hover);
+  transform: translateY(-4px);
+  border-color: var(--border-strong);
 }
 
-/* Checklist Density Fix */
+/* Interactive Elements */
+.pill-button {
+  padding: 8px 18px;
+  border-radius: 999px;
+  font-weight: 800;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.pill-active {
+  box-shadow: 0 4px 0 rgba(0,0,0,0.1);
+  transform: translateY(-2px);
+}
+
+.pill-active:active {
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+/* Badges & Tags */
+.badge-mini {
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+/* Checklist Items */
 .checklist-item {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 6px 0;
-  border-bottom: 1px solid #F9FAFB;
+  gap: 12px;
+  padding: 10px 0;
 }
 
 .custom-checkbox {
   appearance: none;
-  width: 18px;
-  height: 18px;
-  border: 2px solid #E5E8EB;
-  border-radius: 50%;
+  width: 22px;
+  height: 22px;
+  border: 2.5px solid var(--border-strong);
+  border-radius: 8px; /* Softer rounded squares */
   cursor: pointer;
-  transition: all 0.15s;
-  flex-shrink: 0;
+  transition: all 0.2s;
+  background: white;
 }
 
 .custom-checkbox:checked {
-  background: var(--primary);
-  border-color: var(--primary);
+  background: #00BA54;
+  border-color: #00BA54;
+  box-shadow: 0 4px 0 rgba(0,0,0,0.05);
 }
 
 .custom-checkbox:checked::after {
   content: '✓';
   color: white;
-  font-size: 11px;
-  font-weight: 800;
+  font-size: 14px;
+  font-weight: 900;
   display: flex;
   justify-content: center;
   align-items: center;
   height: 100%;
 }
 
-/* Progress Micro-bar */
-.progress-mini {
-  width: 100%;
-  height: 2px;
-  background: #F2F4F6;
-  border-radius: 1px;
-  overflow: hidden;
-}
-
-.progress-mini-fill {
-  height: 100%;
-  background: var(--primary);
-}
-
-/* Badges (Compact) */
-.badge-mini {
-  padding: 1px 6px;
-  border-radius: 4px;
-  font-size: 9px;
-  font-weight: 800;
-  text-transform: uppercase;
-}
-
 /* Animations */
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(4px); }
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(12px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
-.animate-fade-in {
-  animation: fadeIn 0.3s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+.animate-fade-in-up {
+  animation: fadeInUp 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
 }
 
-/* Header (Minimal) */
+/* Header */
 header {
   background: var(--header-bg);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  padding: 12px 24px;
-  border-color: var(--border) !important;
+  backdrop-filter: blur(8px);
+  padding: 16px 24px;
+  border-bottom: 2px solid var(--border);
+}
+
+/* Nav Bar Customization */
+.nav-bar {
+  background: #E1F7DB !important; /* Mint Green override per prompt */
+  border: 2px solid #C5E9BC !important;
 }
 

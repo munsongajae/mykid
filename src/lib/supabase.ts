@@ -14,12 +14,12 @@ export const isSupabaseConfigured = () => {
 
 export type Schedule = {
   id: string;
-  child: 'jeum' | 'eum';
+  child: 'jeum' | 'eum' | 'mom';
   title: string;
   start_time: string;
   end_time: string;
   location?: string;
-  category: 'school' | 'afterschool' | 'academy' | 'etc';
+  category: 'school' | 'afterschool' | 'academy' | 'etc' | 'work';
   color?: string;
   date: string; // YYYY-MM-DD
   created_at?: string;
@@ -31,7 +31,7 @@ export type Schedule = {
 
 export type FileArchive = {
   id: string;
-  child: 'jeum' | 'eum' | 'both';
+  child: 'jeum' | 'eum' | 'mom' | 'both' | 'all';
   title: string;
   file_url: string;
   file_type: 'image' | 'pdf';
