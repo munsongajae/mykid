@@ -84,6 +84,10 @@ export default function ScheduleModal({ child, date, editSchedule, onClose, onSa
         const dedupedByTemplate = new Map<string, ScheduleTemplate>();
         (data || []).forEach((item) => {
           const typedItem = item as ScheduleTemplate;
+          const isSnackTemplate = typedItem.title?.startsWith('간식:');
+          if (isSnackTemplate) {
+            return;
+          }
           const prepKey = (typedItem.preparations || []).join(',');
           const key = [
             typedItem.title,
