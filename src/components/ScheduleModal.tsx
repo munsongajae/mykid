@@ -31,6 +31,13 @@ const MOM_SHIFTS = [
   { label: '조근', title: '조근', start: '04:00', end: '10:00' },
 ];
 
+const HISTORY_LIMIT = 20;
+
+type ScheduleTemplate = Pick<
+  Schedule,
+  'title' | 'start_time' | 'end_time' | 'location' | 'category' | 'preparations'
+>;
+
 export default function ScheduleModal({ child, date, editSchedule, onClose, onSaved, onDeleted }: ScheduleModalProps) {
   const [activeChild, setActiveChild] = useState<'jeum' | 'eum' | 'mom'>(child);
   const [title, setTitle] = useState(editSchedule?.title || '');
@@ -45,6 +52,8 @@ export default function ScheduleModal({ child, date, editSchedule, onClose, onSa
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState('');
+  const [historyItems, setHistoryItems] = useState<ScheduleTemplate[]>([]);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
 
   // Sync default category when switching child (for creation only)
   useEffect(() => {
@@ -52,6 +61,54 @@ export default function ScheduleModal({ child, date, editSchedule, onClose, onSa
        setCategory(activeChild === 'mom' ? 'work' : 'academy');
     }
   }, [activeChild, editSchedule]);
+
+  useEffect(() => {
+    const loadHistory = async () => {
+      if (editSchedule || !isSupabaseConfigured()) {
+        setHistoryItems([]);
+        return;
+      }
+
+      setIsLoadingHistory(true);
+      try {
+        const { data, error: dbError } = await supabase
+          .from('schedules')
+          .select('title,start_time,end_time,location,category,preparations')
+          .eq('child', activeChild)
+          .eq('category', category)
+          .order('date', { ascending: false })
+          .limit(HISTORY_LIMIT);
+
+        if (dbError) throw dbError;
+
+        const dedupedByTemplate = new Map<string, ScheduleTemplate>();
+        (data || []).forEach((item) => {
+          const typedItem = item as ScheduleTemplate;
+          const prepKey = (typedItem.preparations || []).join(',');
+          const key = [
+            typedItem.title,
+            typedItem.start_time,
+            typedItem.end_time,
+            typedItem.location || '',
+            typedItem.category,
+            prepKey,
+          ].join('|');
+
+          if (!dedupedByTemplate.has(key)) {
+            dedupedByTemplate.set(key, typedItem);
+          }
+        });
+
+        setHistoryItems(Array.from(dedupedByTemplate.values()).slice(0, 8));
+      } catch {
+        setHistoryItems([]);
+      } finally {
+        setIsLoadingHistory(false);
+      }
+    };
+
+    loadHistory();
+  }, [activeChild, category, editSchedule]);
 
   const isJeumActual = activeChild === 'jeum';
   const isEumActual = activeChild === 'eum';
@@ -70,6 +127,16 @@ export default function ScheduleModal({ child, date, editSchedule, onClose, onSa
     setTitle(shift.title);
     setStartTime(shift.start);
     setEndTime(shift.end);
+  };
+
+  const applyHistoryItem = (item: ScheduleTemplate) => {
+    setTitle(item.title);
+    setStartTime(item.start_time);
+    setEndTime(item.end_time);
+    setLocation(item.location || '');
+    setCategory(item.category);
+    setPreps((item.preparations || []).join(', '));
+    setError('');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -241,6 +308,36 @@ export default function ScheduleModal({ child, date, editSchedule, onClose, onSa
               ))}
             </div>
           </div>
+
+          {!editSchedule && (
+            <div className="space-y-2">
+              <label className="type-caption uppercase tracking-wider text-[var(--text-400)] flex items-center gap-2">
+                <Tag size={12} />
+                최근 입력한 일정 불러오기
+              </label>
+              <div className="p-2 rounded-2xl bg-[var(--bg-card-hover)] border border-[var(--border)]">
+                {isLoadingHistory ? (
+                  <p className="text-[10px] px-2 py-2 text-[var(--text-400)] font-bold">히스토리 불러오는 중...</p>
+                ) : historyItems.length === 0 ? (
+                  <p className="text-[10px] px-2 py-2 text-[var(--text-400)] font-bold">같은 카테고리의 저장된 히스토리가 없습니다.</p>
+                ) : (
+                  <div className="flex flex-wrap gap-2">
+                    {historyItems.map((item, idx) => (
+                      <button
+                        key={`${item.title}-${item.start_time}-${idx}`}
+                        type="button"
+                        onClick={() => applyHistoryItem(item)}
+                        className="px-3 py-2 rounded-xl bg-[var(--bg-card)] border border-[var(--border)] text-left hover:border-blue-400/40 hover:bg-blue-500/5 transition-all"
+                      >
+                        <p className="text-[11px] font-black text-[var(--text-900)] leading-tight">{item.title}</p>
+                        <p className="text-[9px] font-bold text-[var(--text-400)] mt-0.5">{item.start_time} - {item.end_time}</p>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2"><label className="type-caption uppercase tracking-wider text-[var(--text-400)]">시작</label>
