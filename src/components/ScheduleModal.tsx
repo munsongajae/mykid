@@ -229,7 +229,7 @@ export default function ScheduleModal({ child, date, editSchedule, onClose, onSa
 
   return (
     <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fade-in" onClick={onClose}>
-      <div className="bg-[var(--bg-card)] w-full max-w-md rounded-[32px] overflow-hidden shadow-2xl animate-fade-in-up border border-[var(--border)]" onClick={e => e.stopPropagation()}>
+      <div className="bg-[var(--bg-card)] w-full max-w-md rounded-[32px] overflow-hidden shadow-2xl animate-fade-in-up border border-[var(--border)] max-h-[88vh] flex flex-col" onClick={e => e.stopPropagation()}>
         <div className="px-8 pt-8 pb-4 flex items-center justify-between">
           <div>
              <div className="flex items-center gap-2 mb-1">
@@ -244,7 +244,7 @@ export default function ScheduleModal({ child, date, editSchedule, onClose, onSa
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="px-8 pb-8 pt-4 space-y-4">
+        <form onSubmit={handleSubmit} className="px-8 pb-8 pt-4 space-y-4 overflow-y-auto">
           {!editSchedule && (
             <div className="space-y-2">
               <label className="type-caption uppercase tracking-wider text-[var(--text-400)] font-black">대상 선택</label>
