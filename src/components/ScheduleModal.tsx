@@ -47,6 +47,7 @@ export default function ScheduleModal({ child, date, editSchedule, onClose, onSa
   const [category, setCategory] = useState<'school' | 'afterschool' | 'academy' | 'etc' | 'work'>(editSchedule?.category || (child === 'mom' ? 'work' : 'academy'));
   const [preps, setPreps] = useState(editSchedule?.preparations?.join(', ') || '');
   const [repeat4Weeks, setRepeat4Weeks] = useState(false);
+  const [repeatFromEdit, setRepeatFromEdit] = useState(false);
   const [updateAllSeries, setUpdateAllSeries] = useState(false);
   
   const [isSaving, setIsSaving] = useState(false);
@@ -170,13 +171,54 @@ export default function ScheduleModal({ child, date, editSchedule, onClose, onSa
             onSaved(data as Schedule[]);
           } else {
             // Update only this instance
+            const repeatGroupId = repeatFromEdit ? (editSchedule.group_id || crypto.randomUUID()) : editSchedule.group_id;
             const { data, error: dbError } = await supabase
-              .from('schedules').update({...scheduleData, date: format(date, 'yyyy-MM-dd')}).eq('id', editSchedule.id).select().single();
+              .from('schedules')
+              .update({
+                ...scheduleData,
+                date: format(date, 'yyyy-MM-dd'),
+                ...(repeatFromEdit ? { group_id: repeatGroupId } : {}),
+              })
+              .eq('id', editSchedule.id)
+              .select()
+              .single();
             if (dbError) throw dbError;
-            onSaved(data as Schedule);
+
+            if (repeatFromEdit) {
+              const repeatSchedules = [1, 2, 3].map((weekOffset) => ({
+                ...scheduleData,
+                date: format(addDays(date, weekOffset * 7), 'yyyy-MM-dd'),
+                group_id: repeatGroupId,
+              }));
+              const { data: insertedData, error: insertError } = await supabase
+                .from('schedules')
+                .insert(repeatSchedules)
+                .select();
+              if (insertError) throw insertError;
+              onSaved([data as Schedule, ...((insertedData || []) as Schedule[])]);
+            } else {
+              onSaved(data as Schedule);
+            }
           }
         } else {
-          onSaved({ ...scheduleData, date: format(date, 'yyyy-MM-dd'), id: editSchedule.id, created_at: editSchedule.created_at } as Schedule);
+          const updatedSchedule = {
+            ...scheduleData,
+            date: format(date, 'yyyy-MM-dd'),
+            id: editSchedule.id,
+            created_at: editSchedule.created_at,
+            ...(repeatFromEdit ? { group_id: editSchedule.group_id || crypto.randomUUID() } : {}),
+          } as Schedule;
+
+          if (repeatFromEdit) {
+            const repeatedSchedules = [1, 2, 3].map((weekOffset) => ({
+              ...updatedSchedule,
+              id: `temp-edit-repeat-${Date.now()}-${weekOffset}`,
+              date: format(addDays(date, weekOffset * 7), 'yyyy-MM-dd'),
+            }));
+            onSaved([updatedSchedule, ...repeatedSchedules]);
+          } else {
+            onSaved(updatedSchedule);
+          }
         }
       } else {
         // Creation Logic
@@ -357,6 +399,18 @@ export default function ScheduleModal({ child, date, editSchedule, onClose, onSa
                </button>
              </div>
           )}
+          {editSchedule && (
+             <div className="p-1.5 bg-[var(--bg-card-hover)] rounded-2xl flex items-center gap-3">
+               <button
+                 type="button"
+                 onClick={() => setRepeatFromEdit(!repeatFromEdit)}
+                 disabled={updateAllSeries}
+                 className={`flex items-center justify-center gap-2 flex-1 py-3 rounded-xl transition-all font-black text-[11px] ${repeatFromEdit ? 'bg-[var(--bg-card)] shadow-sm text-blue-500' : 'text-[var(--text-400)]'} ${updateAllSeries ? 'opacity-40 cursor-not-allowed' : ''}`}
+               >
+                 <RotateCcw size={14} className={repeatFromEdit ? 'animate-spin-slow' : ''} /> 수정 후 앞으로 3주 추가 생성
+               </button>
+             </div>
+          )}
 
           <div className="space-y-2">
             <label className="type-caption uppercase tracking-wider text-[var(--text-400)] flex items-center gap-2"><Backpack size={12}/> 준비물 (쉼표로 구분)</label>
@@ -367,7 +421,7 @@ export default function ScheduleModal({ child, date, editSchedule, onClose, onSa
 
           <div className="pt-2">
             <button type="submit" disabled={isSaving || isDeleting} className={`w-full py-5 rounded-[22px] font-black text-base shadow-xl transition-all bg-${themeColor}-600 shadow-${themeColor}-200 text-white flex items-center justify-center gap-2`}>
-              {editSchedule ? <><Check size={18}/> {updateAllSeries ? '연결된 모든 일정 수정' : '이 일정만 수정'}</> : <><Plus size={18}/> {repeat4Weeks ? '4개 일정 동시 추가' : '일정 추가하기'}</>}
+              {editSchedule ? <><Check size={18}/> {updateAllSeries ? '연결된 모든 일정 수정' : repeatFromEdit ? '수정 + 3주 추가 생성' : '이 일정만 수정'}</> : <><Plus size={18}/> {repeat4Weeks ? '4개 일정 동시 추가' : '일정 추가하기'}</>}
             </button>
           </div>
         </form>

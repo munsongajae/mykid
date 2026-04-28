@@ -14,6 +14,10 @@ create table if not exists public.schedules (
   created_at timestamptz not null default now()
 );
 
+-- 코드와 스키마 정합성 보강 (재실행 안전)
+alter table public.schedules add column if not exists preparations text[] not null default '{}';
+alter table public.schedules add column if not exists group_id uuid;
+
 -- 파일 아카이브 테이블
 create table if not exists public.file_archives (
   id uuid primary key default gen_random_uuid(),

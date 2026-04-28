@@ -7,7 +7,7 @@ import { Upload, FileImage, File, Trash2, Eye, X } from 'lucide-react';
 interface FileArchiveViewProps {
   archives: FileArchive[];
   onUploaded: (file: FileArchive) => void;
-  onDeleted: (id: string) => void;
+  onDeleted: (id: string) => void | Promise<void>;
 }
 
 export default function FileArchiveView({ archives, onUploaded, onDeleted }: FileArchiveViewProps) {

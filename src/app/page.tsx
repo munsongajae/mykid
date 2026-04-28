@@ -111,7 +111,7 @@ export default function Home() {
       const end = format(endOfMonth(date), 'yyyyMMdd');
       const res = await fetch(`/api/neis?type=schedule&start=${start}&end=${end}`);
       const json = await res.json();
-      const filtered = (json.data || []).filter((e: any) => e.event !== '토요휴업일');
+      const filtered = (json.data || []).filter((e: SchoolEvent) => e.eventName !== '토요휴업일');
       setSchoolEvents(filtered);
     } catch { console.error('학사 일정 로드 실패'); }
   }, []);
@@ -147,6 +147,20 @@ export default function Home() {
     }
   }, []);
 
+  const loadArchives = useCallback(async () => {
+    try {
+      if (!isSupabaseConfigured()) return;
+      const { data, error } = await supabase
+        .from('file_archives')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      setArchives(data || []);
+    } catch (err) {
+      console.error('아카이브 로드 실패:', err);
+    }
+  }, []);
+
 
   useEffect(() => {
     loadMealData(selectedDate); 
@@ -154,6 +168,10 @@ export default function Home() {
     loadTimetableData(selectedDate);
     loadSchedules(selectedDate);
   }, [selectedDate, loadMealData, loadScheduleData, loadTimetableData, loadSchedules]);
+
+  useEffect(() => {
+    loadArchives();
+  }, [loadArchives]);
 
 
   const daySchedulesAll = schedules.filter(s => s.date === format(selectedDate, 'yyyy-MM-dd'));
@@ -196,7 +214,19 @@ export default function Home() {
 
   const handleDeleteSchedule = (id: string) => setSchedules(prev => prev.filter(s => s.id !== id));
   const handleArchiveUploaded = (f: FileArchive) => setArchives(prev => [f, ...prev]);
-  const handleArchiveDeleted = (id: string) => setArchives(prev => prev.filter(a => a.id !== id));
+  const handleArchiveDeleted = async (id: string) => {
+    if (isSupabaseConfigured()) {
+      try {
+        const { error } = await supabase.from('file_archives').delete().eq('id', id);
+        if (error) throw error;
+      } catch (err) {
+        console.error('아카이브 삭제 실패:', err);
+        alert('아카이브 삭제에 실패했습니다.');
+        return;
+      }
+    }
+    setArchives(prev => prev.filter(a => a.id !== id));
+  };
 
   return (
     <div className="min-h-screen pb-44 bg-[var(--bg-primary)] text-[var(--text-900)] relative">
@@ -211,7 +241,7 @@ export default function Home() {
             </div>
             
             <div className="flex items-center gap-2">
-               <button onClick={() => { loadMealData(selectedDate); loadScheduleData(selectedDate); loadTimetableData(selectedDate); loadSchedules(selectedDate); }} title="새로고침" className="w-8 h-8 rounded-xl flex items-center justify-center bg-[var(--bg-card)] border-2 border-[#F3E5D8] dark:bg-[#1A1D27] dark:border-[#2A2F45] text-orange-400 hover:scale-110 active:scale-95 transition-all"><Clock size={16} strokeWidth={3} /></button>
+               <button onClick={() => { loadMealData(selectedDate); loadScheduleData(selectedDate); loadTimetableData(selectedDate); loadSchedules(selectedDate); loadArchives(); }} title="새로고침" className="w-8 h-8 rounded-xl flex items-center justify-center bg-[var(--bg-card)] border-2 border-[#F3E5D8] dark:bg-[#1A1D27] dark:border-[#2A2F45] text-orange-400 hover:scale-110 active:scale-95 transition-all"><Clock size={16} strokeWidth={3} /></button>
                <button onClick={() => { setActiveTab('settings'); }} title="설정" className="w-8 h-8 rounded-xl flex items-center justify-center bg-[#D6EFFF]/30 border-2 border-[#BEDEFF] dark:bg-[#3A4557] dark:border-[#4A5567] text-[#2C5282] dark:text-blue-300 shadow-sm hover:scale-110 active:scale-95 transition-all"><Settings size={18} strokeWidth={3} /></button>
                <button onClick={() => { 
                  const next = theme === 'light' ? 'dark' : 'light';
