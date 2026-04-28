@@ -38,3 +38,17 @@ export type FileArchive = {
   description?: string;
   created_at?: string;
 };
+
+export type RecurringRule = {
+  id: string;
+  child: 'jeum' | 'eum' | 'mom';
+  title: string;
+  start_time: string;
+  end_time: string;
+  category: 'school' | 'afterschool' | 'academy' | 'etc' | 'work';
+  location?: string;
+  preparations?: string[];
+  weekdays: number[];
+  is_active?: boolean;
+  created_at?: string;
+};

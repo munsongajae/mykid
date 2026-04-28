@@ -17,13 +17,27 @@ import FileArchiveView from '@/components/FileArchiveView';
 
 import { MealInfo, SchoolEvent, TimetableInfo } from '@/lib/neis';
 
-import { supabase, Schedule, FileArchive, isSupabaseConfigured } from '@/lib/supabase';
+import { supabase, Schedule, FileArchive, RecurringRule, isSupabaseConfigured } from '@/lib/supabase';
 
 
 // const SAMPLE_SCHEDULES: Schedule[] = []; // Hardcoded samples removed
 
 
 type ActiveChild = 'jeum' | 'eum' | 'mom';
+type ScheduleCategory = 'school' | 'afterschool' | 'academy' | 'etc' | 'work';
+type NewRecurringRuleInput = Omit<RecurringRule, 'id' | 'created_at' | 'is_active'>;
+
+const LEGACY_RECURRING_RULES_STORAGE_KEY = 'recurringRules';
+const AUTO_GENERATE_WEEKS = 8;
+const WEEKDAY_OPTIONS = [
+  { value: 0, label: '일' },
+  { value: 1, label: '월' },
+  { value: 2, label: '화' },
+  { value: 3, label: '수' },
+  { value: 4, label: '목' },
+  { value: 5, label: '금' },
+  { value: 6, label: '토' },
+] as const;
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState('home');
@@ -573,6 +587,20 @@ function SettingsView({ kidsInfo, saveKidsInfo, theme, setTheme, fontScale, setF
   const [copied, setCopied] = useState(false);
   const [jsonInput, setJsonInput] = useState('');
   const [importing, setImporting] = useState(false);
+  const [recurringRules, setRecurringRules] = useState<RecurringRule[]>([]);
+  const [isLoadingRecurringRules, setIsLoadingRecurringRules] = useState(false);
+  const [isGeneratingRecurring, setIsGeneratingRecurring] = useState(false);
+  const [ruleForm, setRuleForm] = useState<NewRecurringRuleInput>({
+    child: 'jeum',
+    title: '',
+    start_time: '15:00',
+    end_time: '16:00',
+    category: 'afterschool',
+    location: '',
+    preparations: [],
+    weekdays: [1],
+  });
+  const [rulePrepsInput, setRulePrepsInput] = useState('');
   const promptText = `
 [돌봄 간식 데이터 추출 프롬프트]
 당신은 초등학교 돌봄교실 간식 식단표 이미지를 분석하는 전문가입니다. 
@@ -632,6 +660,228 @@ function SettingsView({ kidsInfo, saveKidsInfo, theme, setTheme, fontScale, setF
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const loadRecurringRules = useCallback(async () => {
+    if (!isSupabaseConfigured()) {
+      setRecurringRules([]);
+      return;
+    }
+
+    setIsLoadingRecurringRules(true);
+    try {
+      const { data, error } = await supabase
+        .from('recurring_rules')
+        .select('*')
+        .eq('is_active', true)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      setRecurringRules((data || []) as RecurringRule[]);
+    } catch (err: any) {
+      alert('반복 규칙 로드 실패: ' + err.message);
+    } finally {
+      setIsLoadingRecurringRules(false);
+    }
+  }, []);
+
+  const migrateLegacyRecurringRules = useCallback(async () => {
+    const savedRules = localStorage.getItem(LEGACY_RECURRING_RULES_STORAGE_KEY);
+    if (!savedRules || !isSupabaseConfigured()) return;
+
+    try {
+      const parsed = JSON.parse(savedRules);
+      if (!Array.isArray(parsed) || parsed.length === 0) return;
+
+      const batch = parsed.map((rule: any) => ({
+        child: rule.child,
+        title: rule.title,
+        start_time: rule.start_time,
+        end_time: rule.end_time,
+        category: rule.category,
+        location: rule.location || null,
+        preparations: Array.isArray(rule.preparations) ? rule.preparations : [],
+        weekdays: Array.isArray(rule.weekdays) ? rule.weekdays : [],
+        is_active: true,
+      }));
+
+      const { error } = await supabase.from('recurring_rules').insert(batch);
+      if (error) throw error;
+
+      localStorage.removeItem(LEGACY_RECURRING_RULES_STORAGE_KEY);
+      alert(`기존 로컬 반복 규칙 ${batch.length}개를 DB로 이전했습니다.`);
+    } catch (err: any) {
+      alert('기존 로컬 반복 규칙 이전 실패: ' + err.message);
+    }
+  }, []);
+
+  useEffect(() => {
+    const initializeRecurringRules = async () => {
+      await migrateLegacyRecurringRules();
+      await loadRecurringRules();
+    };
+
+    initializeRecurringRules();
+  }, [loadRecurringRules, migrateLegacyRecurringRules]);
+
+  const toggleRuleWeekday = (day: number) => {
+    setRuleForm((prev: NewRecurringRuleInput) => {
+      const includesDay = prev.weekdays.includes(day);
+      const weekdays = includesDay
+        ? prev.weekdays.filter((d: number) => d !== day)
+        : [...prev.weekdays, day].sort((a, b) => a - b);
+      return { ...prev, weekdays };
+    });
+  };
+
+  const handleAddRecurringRule = async () => {
+    if (!isSupabaseConfigured()) {
+      alert('Supabase 설정이 필요합니다.');
+      return;
+    }
+
+    const trimmedTitle = ruleForm.title.trim();
+    if (!trimmedTitle) {
+      alert('반복 일정 이름을 입력해주세요.');
+      return;
+    }
+    if (ruleForm.weekdays.length === 0) {
+      alert('반복 요일을 1개 이상 선택해주세요.');
+      return;
+    }
+
+    const preparations = rulePrepsInput
+      .split(',')
+      .map((item: string) => item.trim())
+      .filter(Boolean);
+
+    const newRule: NewRecurringRuleInput = {
+      ...ruleForm,
+      title: trimmedTitle,
+      location: ruleForm.location?.trim() || undefined,
+      preparations,
+    };
+
+    try {
+      const { error } = await supabase
+        .from('recurring_rules')
+        .insert({
+          ...newRule,
+          location: newRule.location || null,
+          is_active: true,
+        });
+      if (error) throw error;
+      await loadRecurringRules();
+    } catch (err: any) {
+      alert('반복 규칙 저장 실패: ' + err.message);
+      return;
+    }
+
+    setRuleForm({
+      child: 'jeum',
+      title: '',
+      start_time: '15:00',
+      end_time: '16:00',
+      category: 'afterschool',
+      location: '',
+      preparations: [],
+      weekdays: [1],
+    });
+    setRulePrepsInput('');
+  };
+
+  const handleDeleteRecurringRule = async (ruleId: string) => {
+    if (!isSupabaseConfigured()) {
+      alert('Supabase 설정이 필요합니다.');
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('recurring_rules')
+        .update({ is_active: false })
+        .eq('id', ruleId);
+      if (error) throw error;
+      await loadRecurringRules();
+    } catch (err: any) {
+      alert('반복 규칙 삭제 실패: ' + err.message);
+    }
+  };
+
+  const makeScheduleKey = (item: {
+    child: string;
+    title: string;
+    date: string;
+    start_time: string;
+    end_time: string;
+    category: string;
+  }) => [item.child, item.title, item.date, item.start_time, item.end_time, item.category].join('|');
+
+  const handleGenerateRecurringSchedules = async () => {
+    if (recurringRules.length === 0) {
+      alert('먼저 반복 규칙을 추가해주세요.');
+      return;
+    }
+    if (!isSupabaseConfigured()) {
+      alert('Supabase 설정이 필요합니다.');
+      return;
+    }
+
+    setIsGeneratingRecurring(true);
+    try {
+      const today = new Date();
+      const startDate = format(today, 'yyyy-MM-dd');
+      const endDate = format(addDays(today, AUTO_GENERATE_WEEKS * 7), 'yyyy-MM-dd');
+
+      const { data: existingData, error: existingError } = await supabase
+        .from('schedules')
+        .select('child,title,date,start_time,end_time,category')
+        .gte('date', startDate)
+        .lte('date', endDate);
+
+      if (existingError) throw existingError;
+
+      const existingKeys = new Set((existingData || []).map((item: any) => makeScheduleKey(item)));
+      const toInsert: any[] = [];
+
+      for (let i = 0; i <= AUTO_GENERATE_WEEKS * 7; i++) {
+        const targetDate = addDays(today, i);
+        const dayOfWeek = targetDate.getDay();
+        const dateText = format(targetDate, 'yyyy-MM-dd');
+
+        recurringRules.forEach((rule) => {
+          if (!rule.weekdays.includes(dayOfWeek)) return;
+          const candidate = {
+            child: rule.child,
+            title: rule.title,
+            start_time: rule.start_time,
+            end_time: rule.end_time,
+            location: rule.location,
+            category: rule.category,
+            date: dateText,
+            preparations: rule.preparations || [],
+          };
+          const key = makeScheduleKey(candidate);
+          if (existingKeys.has(key)) return;
+          existingKeys.add(key);
+          toInsert.push(candidate);
+        });
+      }
+
+      if (toInsert.length === 0) {
+        alert('생성할 새 일정이 없습니다. (이미 동일 일정이 존재합니다)');
+        return;
+      }
+
+      const { error: insertError } = await supabase.from('schedules').insert(toInsert);
+      if (insertError) throw insertError;
+
+      alert(`반복 일정 ${toInsert.length}건을 자동 생성했습니다.`);
+      onSchedulesChanged();
+    } catch (err: any) {
+      alert('반복 일정 생성 실패: ' + err.message);
+    } finally {
+      setIsGeneratingRecurring(false);
+    }
+  };
+
   return (
     <section className="space-y-4 animate-fade-in">
        <div className="px-1"><h2 className="type-title">Settings</h2><p className="type-caption">Information and Preferences</p></div>
@@ -677,6 +927,131 @@ function SettingsView({ kidsInfo, saveKidsInfo, theme, setTheme, fontScale, setF
 
 
        {/* 3. Child Information Section */}
+       <div className="glass-card !p-4 space-y-4 bg-sky-500/5 border-sky-500/10">
+          <div className="flex items-center justify-between">
+            <h3 className="type-section text-sky-600 dark:text-sky-400">반복 일정 자동 생성</h3>
+            <button
+              onClick={handleGenerateRecurringSchedules}
+              disabled={isLoadingRecurringRules || isGeneratingRecurring || recurringRules.length === 0}
+              className={`px-4 py-1.5 rounded-lg text-[10px] font-black transition-all ${isGeneratingRecurring ? 'bg-gray-300' : 'bg-sky-600 text-white hover:bg-sky-700 disabled:opacity-30'}`}
+            >
+              {isGeneratingRecurring ? '생성 중...' : `앞으로 ${AUTO_GENERATE_WEEKS}주 생성`}
+            </button>
+          </div>
+          <p className="type-caption text-[var(--text-500)]">반복 규칙을 등록해두면 버튼 한 번으로 미래 일정을 자동 생성합니다. 기존 동일 일정은 중복 생성하지 않습니다.</p>
+
+          <div className="space-y-2">
+            <div className="grid grid-cols-2 gap-2">
+              <select
+                value={ruleForm.child}
+                onChange={(e) => setRuleForm((prev: NewRecurringRuleInput) => ({ ...prev, child: e.target.value as ActiveChild }))}
+                className="w-full px-3 py-2 rounded-lg bg-[var(--bg-primary)] border border-[var(--border)] text-[11px] font-bold text-[var(--text-900)] outline-none"
+              >
+                <option value="jeum">열음</option>
+                <option value="eum">지음</option>
+                <option value="mom">엄마</option>
+              </select>
+              <select
+                value={ruleForm.category}
+                onChange={(e) => setRuleForm((prev: NewRecurringRuleInput) => ({ ...prev, category: e.target.value as ScheduleCategory }))}
+                className="w-full px-3 py-2 rounded-lg bg-[var(--bg-primary)] border border-[var(--border)] text-[11px] font-bold text-[var(--text-900)] outline-none"
+              >
+                <option value="school">학교</option>
+                <option value="afterschool">방과후</option>
+                <option value="academy">학원</option>
+                <option value="etc">기타</option>
+                <option value="work">근무</option>
+              </select>
+            </div>
+
+            <input
+              value={ruleForm.title}
+              onChange={(e) => setRuleForm((prev: NewRecurringRuleInput) => ({ ...prev, title: e.target.value }))}
+              placeholder="예: 독서논술"
+              className="w-full px-3 py-2 rounded-lg bg-[var(--bg-primary)] border border-[var(--border)] text-[11px] font-bold text-[var(--text-900)] outline-none"
+            />
+
+            <div className="grid grid-cols-2 gap-2">
+              <input
+                type="time"
+                value={ruleForm.start_time}
+                onChange={(e) => setRuleForm((prev: NewRecurringRuleInput) => ({ ...prev, start_time: e.target.value }))}
+                className="w-full px-3 py-2 rounded-lg bg-[var(--bg-primary)] border border-[var(--border)] text-[11px] font-bold text-[var(--text-900)] outline-none"
+              />
+              <input
+                type="time"
+                value={ruleForm.end_time}
+                onChange={(e) => setRuleForm((prev: NewRecurringRuleInput) => ({ ...prev, end_time: e.target.value }))}
+                className="w-full px-3 py-2 rounded-lg bg-[var(--bg-primary)] border border-[var(--border)] text-[11px] font-bold text-[var(--text-900)] outline-none"
+              />
+            </div>
+
+            <input
+              value={ruleForm.location || ''}
+              onChange={(e) => setRuleForm((prev: NewRecurringRuleInput) => ({ ...prev, location: e.target.value }))}
+              placeholder="장소 (선택)"
+              className="w-full px-3 py-2 rounded-lg bg-[var(--bg-primary)] border border-[var(--border)] text-[11px] font-bold text-[var(--text-900)] outline-none"
+            />
+
+            <input
+              value={rulePrepsInput}
+              onChange={(e) => setRulePrepsInput(e.target.value)}
+              placeholder="준비물 (쉼표 구분, 선택)"
+              className="w-full px-3 py-2 rounded-lg bg-[var(--bg-primary)] border border-[var(--border)] text-[11px] font-bold text-[var(--text-900)] outline-none"
+            />
+
+            <div className="flex flex-wrap gap-1.5">
+              {WEEKDAY_OPTIONS.map((day) => {
+                const isSelected = ruleForm.weekdays.includes(day.value);
+                return (
+                  <button
+                    key={day.value}
+                    type="button"
+                    onClick={() => toggleRuleWeekday(day.value)}
+                    className={`px-2.5 py-1.5 rounded-lg text-[10px] font-black border transition-all ${isSelected ? 'bg-sky-600 text-white border-sky-600' : 'bg-[var(--bg-primary)] text-[var(--text-500)] border-[var(--border)]'}`}
+                  >
+                    {day.label}
+                  </button>
+                );
+              })}
+            </div>
+
+            <button
+              onClick={handleAddRecurringRule}
+              type="button"
+              className="w-full px-3 py-2 rounded-lg bg-sky-600 text-white text-[11px] font-black hover:bg-sky-700 transition-all"
+            >
+              반복 규칙 추가
+            </button>
+          </div>
+
+          <div className="space-y-2">
+            {isLoadingRecurringRules ? (
+              <p className="text-[10px] text-[var(--text-400)] font-bold">반복 규칙을 불러오는 중입니다...</p>
+            ) : recurringRules.length === 0 ? (
+              <p className="text-[10px] text-[var(--text-400)] font-bold">등록된 반복 규칙이 없습니다.</p>
+            ) : (
+              recurringRules.map((rule) => (
+                <div key={rule.id} className="flex items-center justify-between gap-2 p-2 rounded-lg bg-[var(--bg-primary)] border border-[var(--border)]">
+                  <div className="min-w-0">
+                    <p className="text-[11px] font-black text-[var(--text-900)] truncate">{rule.title}</p>
+                    <p className="text-[9px] font-bold text-[var(--text-400)]">
+                      {[rule.child, rule.category, `${rule.start_time}-${rule.end_time}`, rule.weekdays.map((d) => WEEKDAY_OPTIONS.find((w) => w.value === d)?.label).join('/')].join(' · ')}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteRecurringRule(rule.id)}
+                    className="w-7 h-7 rounded-md border border-red-200 text-red-500 flex items-center justify-center shrink-0"
+                    title="규칙 삭제"
+                  >
+                    <Trash2 size={12} />
+                  </button>
+                </div>
+              ))
+            )}
+          </div>
+       </div>
 
 
        <div className="glass-card !p-4 space-y-4">
